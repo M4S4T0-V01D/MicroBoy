@@ -1,4 +1,4 @@
-// Prism test ROM: visual input tester, frame counter, SRAM persistence and
+// MicroBoy test ROM: visual input tester, frame counter, SRAM persistence and
 // PSG audio. Written for this project; public domain / CC0.
 #include <stdint.h>
 

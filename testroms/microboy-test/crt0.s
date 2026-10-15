@@ -6,8 +6,8 @@
 _start:
     b       rom_start
     .fill   156, 1, 0           @ 0x04-0x9F logo area (left blank)
-    .ascii  "PRISMTEST\0\0\0"   @ 0xA0 title
-    .ascii  "PRSM"              @ 0xAC game code
+    .ascii  "MICROBOYTEST"   @ 0xA0 title
+    .ascii  "MBOY"              @ 0xAC game code
     .ascii  "00"                @ 0xB0 maker code
     .byte   0x96                @ 0xB2 fixed value
     .byte   0, 0                @ 0xB3 unit code, 0xB4 device type

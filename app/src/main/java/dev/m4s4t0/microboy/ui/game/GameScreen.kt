@@ -37,6 +37,8 @@ import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FastForward
 import androidx.compose.material.icons.filled.FastRewind
+import androidx.compose.material.icons.filled.ScreenRotation
+import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material.icons.filled.SlowMotionVideo
 import androidx.compose.material.icons.filled.FileOpen
 import androidx.compose.material.icons.filled.PlayArrow
@@ -73,6 +75,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import dev.m4s4t0.microboy.MicroBoyApp
+import dev.m4s4t0.microboy.emulation.NativeCore
 import dev.m4s4t0.microboy.input.TouchControllerView
 import dev.m4s4t0.microboy.ui.common.Format
 import dev.m4s4t0.microboy.ui.common.slotName
@@ -216,6 +219,9 @@ private fun QuickMenu(a: GameActivity) {
                     MenuTile(Icons.Default.RestartAlt, "Reset") { confirmReset = true }
                     MenuTile(if (s.muted) Icons.AutoMirrored.Filled.VolumeOff else Icons.AutoMirrored.Filled.VolumeUp, if (s.muted) "Unmute" else "Mute") { a.toggleMute() }
                     MenuTile(Icons.Default.Edit, "Edit controls") { a.startEditing() }
+                    if (a.cartHardware and NativeCore.HW_TILT != 0) {
+                        MenuTile(Icons.Default.ScreenRotation, "Recenter tilt") { a.recenterTilt() }
+                    }
                     MenuTile(Icons.Default.Settings, "Settings") { a.openSettings() }
                     MenuTile(Icons.AutoMirrored.Filled.ExitToApp, "Exit game") { a.exit() }
                 }
@@ -247,6 +253,7 @@ private fun QuickMenu(a: GameActivity) {
                         FilterChip(selected = s.slowMotionSpeed == sp, onClick = { a.setSlowMotionSpeed(sp) }, label = { Text(slowLabel(sp)) })
                     }
                 }
+                if (a.cartHardware and NativeCore.HW_LIGHT_SENSOR != 0) SunControl(a)
                 if (s.rewindSeconds > 0) {
                     Text(
                         "Rewind: hold ◀◀ (or L2 on a controller) to go back up to ${s.rewindSeconds} seconds.",
@@ -265,6 +272,31 @@ private fun QuickMenu(a: GameActivity) {
             text = { Text("The game restarts from boot. Unsaved progress is lost; your in-game save file is kept.") },
             confirmButton = { TextButton(onClick = { confirmReset = false; a.reset() }) { Text("Reset") } },
             dismissButton = { TextButton(onClick = { confirmReset = false }) { Text("Cancel") } },
+        )
+    }
+}
+
+/** Light for the cartridge's solar sensor (Boktai): the phone's light sensor or a fixed level. */
+@Composable
+private fun SunControl(a: GameActivity) {
+    val level = a.settings.sunLevel
+    Spacer(Modifier.height(8.dp))
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Icon(Icons.Default.WbSunny, null, tint = MaterialTheme.colorScheme.primary)
+        Spacer(Modifier.width(8.dp))
+        Text("Sun", style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+        Text(if (level < 0) "Light sensor" else "Level $level of 10", style = MaterialTheme.typography.bodySmall)
+    }
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        FilterChip(selected = level < 0, onClick = { a.setSunLevel(if (level < 0) 5 else -1) }, label = { Text("Use light sensor") })
+        Spacer(Modifier.width(8.dp))
+        Slider(
+            value = level.coerceAtLeast(0).toFloat(),
+            onValueChange = { a.setSunLevel(it.toInt()) },
+            valueRange = 0f..10f,
+            steps = 9,
+            enabled = level >= 0,
+            modifier = Modifier.weight(1f),
         )
     }
 }

@@ -21,6 +21,7 @@
 #include <fcntl.h>
 #include <jni.h>
 #include <pthread.h>
+#include <stdatomic.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -65,6 +66,29 @@ static bool rewindOn;
 static int rewindInterval = 2;
 static int rewindCountdown;
 static size_t rewindEntries;
+
+// --- cartridge peripherals: tilt, gyro, solar sensor, rumble -----------------
+// The UI thread writes sensor readings; the core reads them on the emulation
+// thread. Values are already in mGBA's units (see nativeSetMotion).
+
+static _Atomic int32_t tiltX, tiltY, gyroZ;
+static _Atomic int sunLevel;           // 0 = dark .. 255 = bright sunlight
+static _Atomic bool rumbleSeen;        // rumble was on at some point since last poll
+
+static int32_t readTiltX(struct mRotationSource* r) { (void) r; return atomic_load(&tiltX); }
+static int32_t readTiltY(struct mRotationSource* r) { (void) r; return atomic_load(&tiltY); }
+static int32_t readGyroZ(struct mRotationSource* r) { (void) r; return atomic_load(&gyroZ); }
+static void sampleLux(struct GBALuminanceSource* l) { (void) l; }
+// The Boktai sensor counts up to this value, so less means brighter.
+static uint8_t readLux(struct GBALuminanceSource* l) { (void) l; return (uint8_t) (0xFF - atomic_load(&sunLevel)); }
+static void setRumble(struct mRumble* r, int enable) {
+    (void) r;
+    if (enable) atomic_store(&rumbleSeen, true);
+}
+
+static struct mRotationSource rotation = { .readTiltX = readTiltX, .readTiltY = readTiltY, .readGyroZ = readGyroZ };
+static struct GBALuminanceSource luminance = { .sample = sampleLux, .readLuminance = readLux };
+static struct mRumble rumble = { .setRumble = setRumble };
 
 // --- logging ---------------------------------------------------------------
 
@@ -220,6 +244,11 @@ JNIEXPORT jboolean JNICALL JNI(nativeLoadRom)(JNIEnv* env, jclass clazz, jbyteAr
     // Output volume is applied separately in audio.c.
     core->opts.volume = GBA_AUDIO_VOLUME_MAX;
     mCoreLoadConfig(core);
+
+    core->setPeripheral(core, mPERIPH_ROTATION, &rotation);
+    core->setPeripheral(core, mPERIPH_RUMBLE, &rumble);
+    core->setPeripheral(core, mPERIPH_GBA_LUMINANCE, &luminance);
+    atomic_store(&rumbleSeen, false);
 
     core->setVideoBuffer(core, backBuffer, WIDTH);
     core->setAudioBufferSize(core, 2048);
@@ -415,6 +444,46 @@ JNIEXPORT jboolean JNICALL JNI(nativeLoadState)(JNIEnv* env, jclass clazz, jstri
         publishFrame();
     }
     return ok;
+}
+
+// --- JNI: peripherals ----------------------------------------------------------
+
+// Bitmask of the cartridge's extra hardware (mGBA's HW_* flags: 1 RTC,
+// 2 rumble, 4 light sensor, 8 gyro, 16 tilt), known once the ROM is loaded.
+JNIEXPORT jint JNICALL JNI(nativeCartHardware)(JNIEnv* env, jclass clazz) {
+    (void) env;
+    (void) clazz;
+    if (!core || !romLoaded) {
+        return 0;
+    }
+    struct GBA* gba = core->board;
+    return (jint) gba->memory.hw.devices;
+}
+
+// Safe from any thread. Tilt is gravity in m/s² along the screen's x (right)
+// and y (up) axes; gyro is rotation in rad/s around the axis out of the
+// screen. The scale factors match mGBA's libretro port.
+JNIEXPORT void JNICALL JNI(nativeSetMotion)(JNIEnv* env, jclass clazz, jfloat tx, jfloat ty, jfloat gz) {
+    (void) env;
+    (void) clazz;
+    atomic_store(&tiltX, (int32_t) (tx * -2e8f));
+    atomic_store(&tiltY, (int32_t) (ty * 2e8f));
+    atomic_store(&gyroZ, (int32_t) (gz * -5.5e8f));
+}
+
+// Safe from any thread. 0 = dark .. 255 = full sun.
+JNIEXPORT void JNICALL JNI(nativeSetSun)(JNIEnv* env, jclass clazz, jint level) {
+    (void) env;
+    (void) clazz;
+    atomic_store(&sunLevel, level < 0 ? 0 : level > 255 ? 255 : level);
+}
+
+// Returns whether the cartridge turned rumble on since the previous call.
+// Games pulse the motor, so this is polled once per frame rather than mirrored.
+JNIEXPORT jboolean JNICALL JNI(nativePollRumble)(JNIEnv* env, jclass clazz) {
+    (void) env;
+    (void) clazz;
+    return atomic_exchange(&rumbleSeen, false);
 }
 
 // --- JNI: rewind and speed --------------------------------------------------

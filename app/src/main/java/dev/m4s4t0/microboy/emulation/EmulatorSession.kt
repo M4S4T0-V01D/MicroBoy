@@ -64,6 +64,8 @@ class EmulatorSession(
             field = value
             post(::applyRewind)
         }
+    /** Receives rumble motor changes on the emulation thread; null = ignore rumble. */
+    @Volatile var onRumble: ((Boolean) -> Unit)? = null
     @Volatile var audioEnabled = true
     @Volatile var muted = false
     @Volatile var volume = 1f
@@ -159,6 +161,7 @@ class EmulatorSession(
         var audioOpen = false
         var audioPaused = false
         var lastMode = Mode.NORMAL
+        var rumbling = false
         var appliedVolume = -1f
 
         var statFrames = 0
@@ -172,6 +175,10 @@ class EmulatorSession(
             if (!running) break
 
             if (isPaused) {
+                if (rumbling) {
+                    rumbling = false
+                    onRumble?.invoke(false)
+                }
                 if (audioOpen && !audioPaused) {
                     NativeCore.nativeAudioPause()
                     audioPaused = true
@@ -248,6 +255,13 @@ class EmulatorSession(
             val t1 = System.nanoTime()
             onFrame()
 
+            val rumbleTo = onRumble
+            val r = rumbleTo != null && NativeCore.nativePollRumble()
+            if (r != rumbling) {
+                rumbling = r
+                rumbleTo?.invoke(r)
+            }
+
             statFrames += frames
             statBusyNs += t1 - t0
             val nowMs = SystemClock.elapsedRealtime()
@@ -282,6 +296,7 @@ class EmulatorSession(
         }
 
         drainCommands()
+        if (rumbling) onRumble?.invoke(false)
         NativeCore.nativeFlushSave()
         if (audioOpen) NativeCore.nativeAudioClose()
         NativeCore.nativeUnload()

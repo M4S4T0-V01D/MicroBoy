@@ -44,6 +44,10 @@ data class AppSettings(
     val controlsOpacity: Float = 0.55f,
     val controlsScale: Float = 1.0f,
     val haptics: Boolean = true,
+    // Cartridge hardware: rumble motor, and the solar sensor's light source
+    // (-1 = phone light sensor, 0..10 = fixed sun level).
+    val rumble: Boolean = true,
+    val sunLevel: Int = -1,
     val hideControlsWithGamepad: Boolean = true,
     val layoutPortrait: ControlLayout = ControlLayout.defaultPortrait(),
     val layoutLandscape: ControlLayout = ControlLayout.defaultLandscape(),
@@ -91,6 +95,8 @@ class SettingsRepository(private val context: Context) {
         val controlsOpacity = floatPreferencesKey("controls_opacity")
         val controlsScale = floatPreferencesKey("controls_scale")
         val haptics = booleanPreferencesKey("haptics")
+        val rumble = booleanPreferencesKey("rumble")
+        val sunLevel = intPreferencesKey("sun_level")
         val hideWithPad = booleanPreferencesKey("hide_with_gamepad")
         val layoutPortrait = stringPreferencesKey("layout_portrait")
         val layoutLandscape = stringPreferencesKey("layout_landscape")
@@ -132,6 +138,8 @@ class SettingsRepository(private val context: Context) {
             controlsOpacity = p[K.controlsOpacity] ?: d.controlsOpacity,
             controlsScale = p[K.controlsScale] ?: d.controlsScale,
             haptics = p[K.haptics] ?: d.haptics,
+            rumble = p[K.rumble] ?: d.rumble,
+            sunLevel = p[K.sunLevel] ?: d.sunLevel,
             hideControlsWithGamepad = p[K.hideWithPad] ?: d.hideControlsWithGamepad,
             layoutPortrait = p[K.layoutPortrait]?.let(ControlLayout::decode)?.withDefaults(d.layoutPortrait) ?: d.layoutPortrait,
             layoutLandscape = p[K.layoutLandscape]?.let(ControlLayout::decode)?.withDefaults(d.layoutLandscape) ?: d.layoutLandscape,
@@ -173,6 +181,8 @@ class SettingsRepository(private val context: Context) {
             p[K.controlsOpacity] = s.controlsOpacity
             p[K.controlsScale] = s.controlsScale
             p[K.haptics] = s.haptics
+            p[K.rumble] = s.rumble
+            p[K.sunLevel] = s.sunLevel
             p[K.hideWithPad] = s.hideControlsWithGamepad
             p[K.layoutPortrait] = s.layoutPortrait.encode()
             p[K.layoutLandscape] = s.layoutLandscape.encode()

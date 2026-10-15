@@ -6,6 +6,7 @@ A native Android Game Boy Advance emulator built with Kotlin and Jetpack Compose
 running the [mGBA](https://mgba.io) emulation core.
 
 - Accurate emulation from mGBA: ARM7TDMI CPU, PPU, APU, DMA, timers, and SRAM/Flash/EEPROM saves.
+- Cartridge extras driven by the phone: tilt from the accelerometer (Yoshi Topsy-Turvy, Koro Koro Puzzle), gyro from the gyroscope (WarioWare: Twisted), solar from the light sensor or a manual sun slider (Boktai), and rumble through the vibrator (Drill Dozer). Sensors only run for games that have that hardware.
 - **Real fast-forward.** Frames really run 2×, 3×, 4× or 8× faster, or as fast as the device allows. You can hold to fast-forward or tap to toggle it. Audio is muted while fast-forwarding.
 - **Slow motion** at ¾×, ½× or ¼×, with the audio resampled to match (it slows down and drops in pitch).
 - **Rewind.** Hold ◀◀ (or L2) to step back up to 10–60 s. mGBA records diffed snapshots every 2 frames, which costs about 0.04 ms each. Rewinding never undoes the in-game save, and the history is cleared when a state loads or the game resets.
@@ -122,7 +123,8 @@ MPL-2.0 is file-level copyleft: mGBA's source files must stay available under MP
 See the testing section below for what has been verified.
 
 - Tested on one physical phone so far (2026-10-15): video, input and cartridge saves work. Audio was silent before commit f516356, which fixed it.
-- Solar-sensor, tilt, rumble and link-cable peripherals are not emulated in the frontend.
+- Link cable / multiplayer is not supported yet.
+- Sensor games are untested on real hardware. Hardware detection was verified with mGBA's game database (game codes RZWE, U3IE, U32E, KYGE, V49E).
 - Box-art download only works when the ROM's file name matches No-Intro naming.
 - Game Boy / Game Boy Color games are not supported. mGBA's GB core is disabled to keep the app focused.
 
@@ -132,7 +134,7 @@ Done and building: native mGBA bridge, AAudio, GL renderer, touch and controller
 
 **First device test passed** (2026-10-15, Pokémon Emerald): video, input and cartridge saves work. The silent-audio bug found there is fixed. The app targets API 36, as Google Play requires.
 
-Rewind and slow motion are done. Requested next: gyro/tilt/solar sensors, then link cable / multiplayer. Cloud save sync is parked.
+Rewind, slow motion and the cartridge sensors/rumble are done. Requested next: link cable / multiplayer. Cloud save sync is parked.
 
 Planned visual-engine work, requested and not started:
 

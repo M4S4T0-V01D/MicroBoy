@@ -5,12 +5,20 @@ import java.nio.ByteBuffer
 /**
  * Thin JNI surface over the mGBA core (see app/src/main/cpp/jni_bridge.c).
  *
- * All methods except [nativeCopyFrame] must be called from the emulation thread.
+ * All methods except [nativeCopyFrame], [nativeSetMotion] and [nativeSetSun]
+ * must be called from the emulation thread.
  */
 object NativeCore {
     const val WIDTH = 240
     const val HEIGHT = 160
     const val FRAME_BYTES = WIDTH * HEIGHT * 4
+
+    // Cartridge hardware flags (mGBA's GBAHardwareDevice).
+    const val HW_RTC = 1
+    const val HW_RUMBLE = 2
+    const val HW_LIGHT_SENSOR = 4
+    const val HW_GYRO = 8
+    const val HW_TILT = 16
 
     /** GBA refresh rate: 16.78 MHz / 280896 cycles per frame. */
     const val FRAME_RATE = 16_777_216.0 / 280_896.0
@@ -32,6 +40,14 @@ object NativeCore {
     @JvmStatic external fun nativeImportSave(data: ByteArray): Boolean
     @JvmStatic external fun nativeSaveState(path: String): Boolean
     @JvmStatic external fun nativeLoadState(path: String): Boolean
+
+    /** Cartridge extras as a bitmask of the HW_* flags below. */
+    @JvmStatic external fun nativeCartHardware(): Int
+    /** Safe from any thread. Gravity in m/s² along screen x/y; gyro in rad/s. */
+    @JvmStatic external fun nativeSetMotion(tiltX: Float, tiltY: Float, gyroZ: Float)
+    /** Safe from any thread. 0 = dark .. 255 = full sun. */
+    @JvmStatic external fun nativeSetSun(level: Int)
+    @JvmStatic external fun nativePollRumble(): Boolean
 
     @JvmStatic external fun nativeSetRewind(enabled: Boolean, entries: Int, interval: Int)
     @JvmStatic external fun nativeRewindStep(): Boolean

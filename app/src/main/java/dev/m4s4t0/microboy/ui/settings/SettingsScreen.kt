@@ -222,6 +222,7 @@ private fun LazyListScope.controlsSection(s: AppSettings, set: Setter) {
     item { SliderRow("Opacity", s.controlsOpacity, 0.1f..1f, ::pct) { set { copy(controlsOpacity = it) } } }
     item { SliderRow("Size", s.controlsScale, 0.6f..1.6f, ::pct) { set { copy(controlsScale = it) } } }
     item { SwitchRow("Haptic feedback", checked = s.haptics) { set { copy(haptics = it) } } }
+    item { SwitchRow("Rumble", "Vibrates when a game with a rumble cartridge uses it (Drill Dozer, WarioWare: Twisted)", s.rumble) { set { copy(rumble = it) } } }
     item {
         SwitchRow("Hide when a controller is connected", "Only the menu button stays visible", s.hideControlsWithGamepad) {
             set { copy(hideControlsWithGamepad = it) }

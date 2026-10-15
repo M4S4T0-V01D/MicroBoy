@@ -47,6 +47,7 @@ import dev.m4s4t0.microboy.input.ControlId
 import dev.m4s4t0.microboy.input.ControlLayout
 import dev.m4s4t0.microboy.input.GamepadInput
 import dev.m4s4t0.microboy.input.PadAction
+import dev.m4s4t0.microboy.input.SensorInput
 import dev.m4s4t0.microboy.input.TouchControllerView
 import dev.m4s4t0.microboy.render.DisplayConfig
 import dev.m4s4t0.microboy.render.GameRenderer
@@ -77,6 +78,8 @@ class GameActivity : ComponentActivity() {
     lateinit var controller: TouchControllerView
         private set
     private lateinit var gamepad: GamepadInput
+    private lateinit var sensors: SensorInput
+    private lateinit var vibrator: android.os.Vibrator
     private val thumbBuffer: ByteBuffer = ByteBuffer.allocateDirect(NativeCore.FRAME_BYTES).order(ByteOrder.nativeOrder())
 
     // ---- state observed by the Compose UI (GameScreen) ----
@@ -94,6 +97,9 @@ class GameActivity : ComponentActivity() {
     var rewindActive by mutableStateOf(false)
         private set
     var slowActive by mutableStateOf(false)
+        private set
+    /** The cartridge's extra hardware (NativeCore.HW_* flags), known once started. */
+    var cartHardware by mutableIntStateOf(0)
         private set
     var gamepadConnected by mutableStateOf(false)
         private set
@@ -185,6 +191,16 @@ class GameActivity : ComponentActivity() {
                 }
             }
         }
+        sensors = SensorInput(this) {
+            @Suppress("DEPRECATION")
+            if (Build.VERSION.SDK_INT >= 30) display?.rotation ?: 0 else windowManager.defaultDisplay.rotation
+        }
+        vibrator = if (Build.VERSION.SDK_INT >= 31) {
+            (getSystemService(VIBRATOR_MANAGER_SERVICE) as android.os.VibratorManager).defaultVibrator
+        } else {
+            @Suppress("DEPRECATION")
+            getSystemService(VIBRATOR_SERVICE) as android.os.Vibrator
+        }
         gamepad = GamepadInput(
             onKeys = { session?.setPadKeys(it) },
             onFastForward = { onFastForwardInput(it, fromPad = true) },
@@ -246,9 +262,13 @@ class GameActivity : ComponentActivity() {
             skipBios = settings.skipBiosIntro || bios == null,
             onFrame = { glView.requestRender() },
             onStarted = { ok ->
+                val hw = if (ok) NativeCore.nativeCartHardware() else 0
                 runOnUiThread {
-                    if (ok) started = true
-                    else fatalError = "The emulator couldn't start this ROM. The file may be damaged or not a GBA game."
+                    if (ok) {
+                        started = true
+                        cartHardware = hw
+                        applyHardware(announce = true)
+                    } else fatalError = "The emulator couldn't start this ROM. The file may be damaged or not a GBA game."
                 }
             },
         )
@@ -302,11 +322,13 @@ class GameActivity : ComponentActivity() {
         session?.let {
             it.fastForwardSpeed = s.fastForwardSpeed
             it.slowSpeed = s.slowMotionSpeed
+            it.onRumble = if (s.rumble && cartHardware and NativeCore.HW_RUMBLE != 0) ::setRumble else null
             it.rewindSeconds = s.rewindSeconds
             it.audioEnabled = s.audioEnabled
             it.muted = s.muted
             it.volume = s.volume
         }
+        sensors.sunSetting = s.sunLevel
         if (s.fastForwardMode == FastForwardMode.HOLD && ffToggled) {
             ffToggled = false
             updateFastForward()
@@ -374,6 +396,49 @@ class GameActivity : ComponentActivity() {
         val active = ffToggled || ffHeldTouch || ffHeldPad
         session?.fastForward = active
         ffActive = active
+    }
+
+    // ------------------------------------------------- cartridge hardware
+
+    /** Starts the sensors this game uses and hooks up its rumble motor. */
+    private fun applyHardware(announce: Boolean) {
+        val hw = cartHardware
+        if (hw and (NativeCore.HW_TILT or NativeCore.HW_GYRO or NativeCore.HW_LIGHT_SENSOR) != 0 && !lifecyclePaused) {
+            sensors.start(hw)
+        }
+        applySettings()
+        if (!announce) return
+        message = when {
+            hw and NativeCore.HW_GYRO != 0 && !sensors.hasGyroscope -> "This game needs a gyroscope, and this phone doesn't have one"
+            hw and NativeCore.HW_TILT != 0 && !sensors.hasAccelerometer -> "This game needs a tilt sensor, and this phone doesn't have one"
+            hw and NativeCore.HW_TILT != 0 -> "Tilt game: hold the phone level, or use Recenter tilt in the menu"
+            hw and NativeCore.HW_GYRO != 0 -> "Gyro game: turn the phone to play"
+            hw and NativeCore.HW_LIGHT_SENSOR != 0 && settings.sunLevel < 0 && sensors.hasLightSensor -> "Solar sensor: the phone's light sensor is the sun"
+            hw and NativeCore.HW_LIGHT_SENSOR != 0 -> "Solar sensor: set the sun level in the menu"
+            else -> message
+        }
+    }
+
+    fun recenterTilt() {
+        sensors.recenter()
+        message = "Tilt recentered"
+    }
+
+    fun setSunLevel(level: Int) {
+        lifecycleScope.launch { app.settings.update { it.copy(sunLevel = level) } }
+    }
+
+    private var rumbleOn = false
+
+    /** Called on the emulation thread when the cartridge's motor starts or stops. */
+    private fun setRumble(on: Boolean) {
+        if (on == rumbleOn) return
+        rumbleOn = on
+        if (on) {
+            vibrator.vibrate(android.os.VibrationEffect.createWaveform(longArrayOf(0, 10_000), 0))
+        } else {
+            vibrator.cancel()
+        }
     }
 
     private fun onRewindInput(pressed: Boolean, fromPad: Boolean) {
@@ -578,6 +643,7 @@ class GameActivity : ComponentActivity() {
         renderer.invalidate()
         hideSystemBars()
         lifecyclePaused = false
+        if (cartHardware != 0) applyHardware(announce = false)
         requestFocus()
         updatePause()
         if (!menuOpen) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
@@ -587,6 +653,7 @@ class GameActivity : ComponentActivity() {
         super.onPause()
         if (!::glView.isInitialized) return
         lifecyclePaused = true
+        sensors.stop()
         updatePause()
         controller.releaseAll()
         gamepad.reset()

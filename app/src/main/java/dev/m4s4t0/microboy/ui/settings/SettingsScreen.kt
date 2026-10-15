@@ -66,6 +66,9 @@ import dev.m4s4t0.microboy.ui.theme.Palettes
 import dev.m4s4t0.microboy.input.ControlLayout
 import dev.m4s4t0.microboy.input.GamepadMapping
 import dev.m4s4t0.microboy.input.PadAction
+import dev.m4s4t0.microboy.ui.common.Feedback
+import androidx.compose.material3.Button
+import androidx.compose.material3.OutlinedButton
 import dev.m4s4t0.microboy.ui.game.FF_SPEEDS
 import dev.m4s4t0.microboy.ui.game.ffLabel
 import dev.m4s4t0.microboy.ui.game.SLOW_SPEEDS
@@ -433,6 +436,18 @@ private fun AboutSection(onReset: () -> Unit) {
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            Spacer(Modifier.height(12.dp))
+            Text(
+                "Found a bug or have an idea? Feedback goes straight to the developer. The testing guide lists what to try.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            val context = LocalContext.current
+            Row(Modifier.padding(top = 8.dp)) {
+                Button(onClick = { Feedback.email(context) }) { Text("Send feedback") }
+                Spacer(Modifier.width(8.dp))
+                OutlinedButton(onClick = { Feedback.openGuide(context) }) { Text("Testing guide") }
+            }
             TextButton(onClick = { confirm = true }, Modifier.padding(top = 8.dp)) { Text("Reset all settings") }
         }
     }

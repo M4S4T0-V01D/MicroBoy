@@ -16,6 +16,8 @@ running the [mGBA](https://mgba.io) emulation core.
 - Display options: fit, integer, or stretch scaling, smoothing, scanline, LCD-grid and CRT filters, brightness, saturation, and GBA color correction.
 - 11 color themes, plus a fully custom theme (HSV picker) and wallpaper colors on Android 12+.
 - Low-latency AAudio output with dynamic rate control, audio-focus handling, and auto-pause when headphones are unplugged.
+- **Online link cable.** Trade and battle over Wi-Fi or the internet. Both phones run both consoles (`app/src/main/cpp/link.c`, a deterministic link for two mGBA cores) and exchange only button presses, so links run at full speed with a small input delay. A lobby (`server/`, Cloudflare Workers) has two lists: players sharing their game, and nickname-only players. It also handles invites, blocks and reports. Phones connect directly over UDP when they can (STUN hole punching), and through the server relay otherwise. Game files are never sent; each player needs the games involved.
+- Feedback: Settings → About → Send feedback, or the button on the library screen, opens an email to the developer prefilled with device details. Testing guide: [feedback page](https://m4s4t0-v01d.github.io/MicroBoy/feedback.html).
 
 Website: **https://m4s4t0-v01d.github.io/MicroBoy/** (source in [docs/](docs/), served by GitHub Pages).
 
@@ -100,7 +102,8 @@ MicroBoy ships no BIOS. mGBA's built-in open-source BIOS replacement is used unl
 | ROM | Source | License | Purpose |
 |---|---|---|---|
 | `testroms/microboy-test/microboy-test.gba` | written for this project (`build.sh`, clang + lld) | public domain | input, audio, frame counter (speed), SRAM persistence |
-| `testroms/microboy-demo/microboy-demo.gba` | written for this project (`build.sh`: `gen.py` + clang + lld) | CC0 | the website's endless pixel scene: tiled-background parallax, sprites, palette themes, PSG music. Downloadable from the website |
+| `testroms/microboy-demo/microboy-demo.gba` | written for this project (`build.sh`: `gen.py` + clang + lld) | CC0 | the website's endless pixel scene: tiled-background parallax, sprites, palette themes, and "Pocket Lullaby", a looping song for all four PSG channels. Downloadable from the website |
+| `testroms/link-test/link-test.gba` | written for this project | CC0 | two consoles in multiplayer mode exchange counters every frame and check them; green = OK. Used by `tools/linktest` and for online link testing |
 
 `tools/romshot.sh BUILD_DIR` builds `romshot`, which runs a ROM headless on the mGBA submodule and writes PPM screenshots plus the audio level. That lets you check homebrew ROMs without a device: `romshot ROM OUTDIR 60 600 700:a 760` saves frames 60, 600 and 760, and presses A at frame 700.
 | `testroms/jsmolka/*.gba` | [jsmolka/gba-tests](https://github.com/jsmolka/gba-tests) | MIT | CPU (ARM/Thumb), memory, PPU, SRAM/Flash saves |
@@ -123,7 +126,8 @@ MPL-2.0 is file-level copyleft: mGBA's source files must stay available under MP
 See the testing section below for what has been verified.
 
 - Tested on one physical phone so far (2026-10-15): video, input and cartridge saves work. Audio was silent before commit f516356, which fixed it.
-- Link cable / multiplayer is not supported yet.
+- Online link supports two players (GBA multiplayer and normal serial modes). Wireless adapter games and 3–4 player links aren't supported.
+- Online link was verified end to end on two Android emulators through the live server: linking, pause and resume, a 6 s network drop, and disconnect. It hasn't yet been tried with commercial games on real phones.
 - Sensor games are untested on real hardware. Hardware detection was verified with mGBA's game database (game codes RZWE, U3IE, U32E, KYGE, V49E).
 - Box-art download only works when the ROM's file name matches No-Intro naming.
 - Game Boy / Game Boy Color games are not supported. mGBA's GB core is disabled to keep the app focused.
@@ -134,7 +138,7 @@ Done and building: native mGBA bridge, AAudio, GL renderer, touch and controller
 
 **First device test passed** (2026-10-15, Pokémon Emerald): video, input and cartridge saves work. The silent-audio bug found there is fixed. The app targets API 36, as Google Play requires.
 
-Rewind, slow motion and the cartridge sensors/rumble are done. Requested next: link cable / multiplayer. Cloud save sync is parked.
+Rewind, slow motion, cartridge sensors and rumble, online link, and feedback are done. Cloud save sync is parked.
 
 Planned visual-engine work, requested and not started:
 

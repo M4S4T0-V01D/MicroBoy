@@ -121,7 +121,18 @@ private fun NickSetup(a: GameActivity) {
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
         )
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(8.dp))
+        val context = androidx.compose.ui.platform.LocalContext.current
+        Text(
+            "While you're online, other players see your nickname, and your game's title if you choose. Linking sends save states and button presses only to the player you link with.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        TextButton(onClick = {
+            runCatching {
+                context.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse("https://m4s4t0-v01d.github.io/MicroBoy/privacy.html")))
+            }
+        }) { Text("Privacy policy") }
         Button(onClick = { a.link.setNick(nick) }, enabled = nick.trim().length >= 2) { Text("Go online") }
     }
 }

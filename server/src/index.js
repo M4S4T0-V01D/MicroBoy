@@ -14,6 +14,7 @@ const NICK_MAX = 16;
 const LIST_MAX = 200;
 const REPORTS_TO_HIDE = 3;
 const REPORT_WINDOW_MS = 7 * 24 * 3600 * 1000;
+const REPORT_KEEP_MS = 30 * 24 * 3600 * 1000;
 
 // A short, deliberately conservative list. Nicknames are also limited to
 // letters, digits, spaces and . _ - so they can't carry links or contact info.
@@ -229,6 +230,8 @@ export class Lobby extends DurableObject {
         const target = this.find(m.id);
         if (typeof m.id !== "string" || m.id === a.id) return;
         const reason = typeof m.reason === "string" ? m.reason.slice(0, 200) : "";
+        // Reports are kept 30 days, then deleted.
+        this.ctx.storage.sql.exec("DELETE FROM reports WHERE at < ?", Date.now() - REPORT_KEEP_MS);
         this.ctx.storage.sql.exec(
           "INSERT OR REPLACE INTO reports (target, reporter, nick, reason, at) VALUES (?, ?, ?, ?, ?)",
           m.id, a.id, target ? target.a.nick : "", reason, Date.now()

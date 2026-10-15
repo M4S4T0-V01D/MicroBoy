@@ -258,3 +258,8 @@ kbd {
 }
 .demo-get .btn { width: 100%; justify-content: center; }
 kbd.arrow { font: 600 13px/1 var(--sans); padding: 3px 7px; }
+
+/* demo song */
+.listen { margin: 18px 0 0; }
+.listen figcaption { font-size: 13px; color: var(--ink-dim); margin-bottom: 6px; }
+.listen audio { width: 100%; max-width: 420px; height: 40px; }

@@ -30,6 +30,7 @@ import androidx.compose.material.icons.filled.CreateNewFolder
 import androidx.compose.material.icons.filled.InsertDriveFile
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Feedback
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.SportsEsports
 import androidx.compose.material3.Button
@@ -161,6 +162,10 @@ fun LibraryScreen(onOpenInfo: (String) -> Unit, onOpenSettings: () -> Unit) {
                 actions = {
                     if (games.isNotEmpty()) IconButton(onClick = { searching = !searching; if (!searching) query = "" }) {
                         Icon(if (searching) Icons.Default.Close else Icons.Default.Search, "Search")
+                    }
+                    val context = androidx.compose.ui.platform.LocalContext.current
+                    IconButton(onClick = { dev.m4s4t0.microboy.ui.common.Feedback.email(context) }) {
+                        Icon(Icons.Default.Feedback, "Send feedback")
                     }
                     IconButton(onClick = onOpenSettings) { Icon(Icons.Default.Settings, "Settings") }
                 },

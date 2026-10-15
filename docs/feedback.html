@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MicroBoy Feedback</title>
+  <meta name="description" content="Help test MicroBoy: what to try, what feedback we want, and how to report bugs.">
+  <meta name="theme-color" content="#14121F">
+  <link rel="icon" href="logo.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Silkscreen&display=swap">
+  <link rel="stylesheet" href="style.css">
+  <script>
+    // Keep the theme picked on the home page.
+    try {
+      const t = { midnight: ["#B39DFF", "#FF8A80", "#14121F"], glacier: ["#7FD8FF", "#B8F2E6", "#0E1A24"], arcade: ["#FF4FD8", "#3CF0FF", "#07060C"], ember: ["#FF9248", "#FFD166", "#1C110D"], lime: ["#C6F432", "#4FE3A1", "#111A0E"], ocean: ["#4FC3F7", "#7C83FF", "#0A1428"], pocket: ["#9BBC0F", "#8BAC0F", "#0F380F"], oled: ["#E0E0E0", "#B39DFF", "#000000"], sakura: ["#D9467A", "#7B5EA7", "#FFF4F7"], paper: ["#2F4FA2", "#D9822B", "#F7F3EA"], stone: ["#6A4BC4", "#B0305C", "#E6E4E0"] }[localStorage.getItem("microboy-theme")];
+      if (t) {
+        const s = document.documentElement.style, light = ["#FFF4F7", "#F7F3EA", "#E6E4E0"].includes(t[2]);
+        s.setProperty("--primary", t[0]); s.setProperty("--accent", t[1]); s.setProperty("--bg", t[2]);
+        s.setProperty("--ink", light ? "#1B1820" : "#F3F0FF");
+        s.setProperty("--mint", light ? "#1B8A68" : "#7FE0C2");
+        if (light) document.documentElement.classList.add("light");
+      }
+    } catch (_) {}
+  </script>
+  <style>
+    .fb-grid { display: grid; grid-template-columns: 1.1fr .9fr; gap: 28px; align-items: start; }
+    @media (max-width: 900px) { .fb-grid { grid-template-columns: 1fr; } }
+    .form { display: grid; gap: 14px; }
+    .form label { display: grid; gap: 6px; font-weight: 600; font-size: 14px; }
+    .form label span { font-weight: 400; color: var(--ink-dim); font-size: 13px; }
+    .form input, .form textarea, .form select {
+      font: 15px/1.5 var(--sans); color: var(--ink); background: color-mix(in srgb, var(--bg) 70%, #000);
+      border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; width: 100%;
+    }
+    .form textarea { min-height: 110px; resize: vertical; }
+    .form input:focus, .form textarea:focus, .form select:focus { outline: 2px solid var(--primary); outline-offset: 1px; }
+    .kinds { display: flex; flex-wrap: wrap; gap: 8px; }
+    .kinds input { position: absolute; opacity: 0; pointer-events: none; }
+    .kinds label { display: inline-flex; padding: 8px 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; font-weight: 500; }
+    .kinds input:checked + label { border-color: var(--accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 35%, transparent); }
+    .kinds input:focus-visible + label { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+    .note { color: var(--ink-dim); font-size: 13px; margin: 0; }
+    .checklist { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; }
+    .checklist li label { display: flex; gap: 10px; align-items: flex-start; cursor: pointer; padding: 6px 0; color: var(--ink-dim); }
+    .checklist input { margin-top: 4px; accent-color: var(--accent); width: 18px; height: 18px; flex: none; }
+    .checklist input:checked + span { text-decoration: line-through; opacity: .7; }
+    .progress { font: 13px var(--pixel); color: var(--mint); }
+    .channels { display: grid; gap: 12px; }
+    .channels .card h3 { margin-bottom: 4px; }
+    .doc-wide { max-width: var(--max); }
+    h2.small { font-size: 22px; margin-top: 36px; }
+  </style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap">
+    <a class="brand pixel" href="./"><img src="logo.svg" alt="" width="32" height="32">MicroBoy</a>
+    <ul>
+      <li class="keep"><a href="./">Home</a></li>
+      <li><a href="#test">How to test</a></li>
+      <li class="keep"><a href="#send">Send feedback</a></li>
+    </ul>
+  </div>
+</header>
+
+<main class="wrap doc doc-wide">
+  <p class="updated">Beta testing</p>
+  <h1>Help make MicroBoy better</h1>
+  <p class="lede" style="max-width:44em">Thanks for testing. Every bug report, rough edge and idea helps. Try as many features as you can, on as many games as you own, and tell us what worked, what didn't, and what felt confusing.</p>
+
+  <div class="fb-grid">
+    <section id="test" style="padding:0">
+      <h2 class="small">What to try</h2>
+      <p class="note">Tick things off as you go. Your progress is saved in this browser only. <span class="progress" id="progress"></span></p>
+      <ul class="checklist" id="checklist">
+        <li><label><input type="checkbox" data-k="add"><span><strong>Add games</strong>: pick single files, and a whole folder. Try the search and sorting.</span></label></li>
+        <li><label><input type="checkbox" data-k="play"><span><strong>Play for 15+ minutes</strong>: watch for wrong graphics, crackly or missing sound, or slowdowns.</span></label></li>
+        <li><label><input type="checkbox" data-k="sav"><span><strong>In-game saves</strong>: save in the game, close MicroBoy completely, reopen, and check it loaded.</span></label></li>
+        <li><label><input type="checkbox" data-k="states"><span><strong>Save states</strong>: save and load slots, quick save/load, the Auto slot, and export/import.</span></label></li>
+        <li><label><input type="checkbox" data-k="ff"><span><strong>Fast-forward</strong>: each speed and Max, hold and tap-to-toggle modes.</span></label></li>
+        <li><label><input type="checkbox" data-k="slow"><span><strong>Slow motion</strong> (pause menu): ¾×, ½× and ¼×, including how the sound slows down.</span></label></li>
+        <li><label><input type="checkbox" data-k="rewind"><span><strong>Rewind</strong>: hold ◀◀, try different history lengths in Settings → Speed, and check your in-game save survives.</span></label></li>
+        <li><label><input type="checkbox" data-k="touch"><span><strong>Touch controls</strong>: Edit controls, move and resize buttons, in portrait and landscape.</span></label></li>
+        <li><label><input type="checkbox" data-k="pad"><span><strong>A controller</strong> (Bluetooth or USB): play, and remap some buttons.</span></label></li>
+        <li><label><input type="checkbox" data-k="display"><span><strong>Display</strong>: scaling modes, filters (scanlines, LCD grid, CRT), color correction.</span></label></li>
+        <li><label><input type="checkbox" data-k="themes"><span><strong>Themes</strong>: presets, the custom theme, and wallpaper colors on Android 12+.</span></label></li>
+        <li><label><input type="checkbox" data-k="audio"><span><strong>Audio</strong>: volume, mute, and unplugging headphones mid-game, which should pause.</span></label></li>
+        <li><label><input type="checkbox" data-k="sensors"><span><strong>Sensor games</strong>, if you own any: tilt (Yoshi), gyro (WarioWare: Twisted), solar (Boktai), rumble (Drill Dozer).</span></label></li>
+        <li><label><input type="checkbox" data-k="link"><span><strong>Online link</strong>, with a friend: both lobby lists, invite, accept, trade or battle, pause, then disconnect. Try the same Wi-Fi <em>and</em> mobile data.</span></label></li>
+        <li><label><input type="checkbox" data-k="bg"><span><strong>Interruptions</strong>: a phone call, switching apps, locking the screen, rotating mid-game.</span></label></li>
+        <li><label><input type="checkbox" data-k="demo"><span><strong>The demo ROM</strong> from the home page: does Pocket Lullaby sound right on your phone?</span></label></li>
+      </ul>
+
+      <h2 class="small">What feedback we want</h2>
+      <ul>
+        <li><strong>Bugs</strong>: crashes, freezes, wrong graphics or sound, lost saves, buttons that don't respond.</li>
+        <li><strong>Performance</strong>: stutter, slowdowns, battery drain or heat. Mention your phone model.</li>
+        <li><strong>Online link</strong>: did linking work? The Link cable screen shows "direct" or "via relay" and the input delay. Tell us which, and how it felt.</li>
+        <li><strong>Confusing parts</strong>: anything you had to figure out, or couldn't find.</li>
+        <li><strong>Ideas</strong>: features you'd love to see.</li>
+        <li><strong>Things you liked</strong>: so we know what not to break.</li>
+      </ul>
+
+      <h2 class="small">A great bug report</h2>
+      <ol>
+        <li>What you did, step by step.</li>
+        <li>What happened, and what you expected.</li>
+        <li>The game, and whether it happens every time.</li>
+        <li>Your phone and Android version. In-app feedback fills these in for you.</li>
+        <li>A screenshot or screen recording, if you can. Attach it to the email.</li>
+      </ol>
+    </section>
+
+    <section id="send" style="padding:0">
+      <div class="card">
+        <h2 class="small" style="margin-top:0">Send feedback</h2>
+        <form class="form" id="fb" novalidate>
+          <div>
+            <div style="font-weight:600;font-size:14px;margin-bottom:6px">This is about</div>
+            <div class="kinds" role="radiogroup" aria-label="Feedback type">
+              <input type="radio" name="kind" id="k-bug" value="Bug" checked><label for="k-bug">A bug</label>
+              <input type="radio" name="kind" id="k-link" value="Online link"><label for="k-link">Online link</label>
+              <input type="radio" name="kind" id="k-idea" value="Idea"><label for="k-idea">An idea</label>
+              <input type="radio" name="kind" id="k-other" value="Feedback"><label for="k-other">Something else</label>
+            </div>
+          </div>
+          <label>What happened, or what's your idea?
+            <textarea id="what" required placeholder="Pokémon trade froze at the 'Communicating' screen…"></textarea>
+          </label>
+          <label>Steps to reproduce <span>(for bugs)</span>
+            <textarea id="steps" placeholder="1. Opened Link cable&#10;2. Invited a friend on mobile data&#10;3. …"></textarea>
+          </label>
+          <div class="row" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <label>Phone <span>(model)</span><input id="phone" placeholder="Pixel 8"></label>
+            <label>Game <span>(if relevant)</span><input id="game" placeholder="Pokémon Emerald"></label>
+          </div>
+          <div class="row">
+            <button class="btn btn-primary" type="submit">Send by email</button>
+            <button class="btn btn-ghost" type="button" id="copy">Copy text</button>
+          </div>
+          <p class="note" id="status" role="status">Opens your email app, addressed to <a href="mailto:masato-void@protonmail.com">masato-void@protonmail.com</a>, with your answers filled in. Nothing is sent until you press send there.</p>
+        </form>
+      </div>
+
+      <h2 class="small">Other ways to reach us</h2>
+      <div class="channels">
+        <div class="card">
+          <h3>In the app</h3>
+          <p>Settings → About → <strong>Send feedback</strong>, or the feedback button on the library screen. It fills in your MicroBoy version and phone details for you.</p>
+        </div>
+        <div class="card">
+          <h3>Google Play (private)</h3>
+          <p>Testers can send private feedback through Google Play: open MicroBoy's page in the Play Store and use the tester feedback section. Only the developer sees it.</p>
+        </div>
+        <div class="card">
+          <h3>Email</h3>
+          <p><a href="mailto:masato-void@protonmail.com?subject=MicroBoy%20feedback">masato-void@protonmail.com</a></p>
+        </div>
+        <div class="card">
+          <h3>GitHub</h3>
+          <p>Public bug reports at <a href="https://github.com/M4S4T0-V01D/MicroBoy/issues">github.com/M4S4T0-V01D/MicroBoy/issues</a>. Anyone can see these, so leave out personal details.</p>
+        </div>
+      </div>
+    </section>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div>
+      <div class="who">MicroBoy, developed by <strong>M4S4T0</strong></div>
+      <p>MicroBoy is not affiliated with or endorsed by Nintendo. Game Boy Advance is a trademark of Nintendo.</p>
+    </div>
+    <nav aria-label="Footer">
+      <a href="./">Home</a>
+      <a href="privacy.html">Privacy</a>
+      <a href="https://github.com/M4S4T0-V01D/MicroBoy">Source</a>
+    </nav>
+  </div>
+</footer>
+
+<script>
+  // Checklist progress, remembered in this browser.
+  const boxes = [...document.querySelectorAll("#checklist input")];
+  let done = {};
+  try { done = JSON.parse(localStorage.getItem("microboy-checklist") || "{}"); } catch (_) {}
+  const progress = () => {
+    const n = boxes.filter((b) => b.checked).length;
+    document.getElementById("progress").textContent = `${n} of ${boxes.length} tried`;
+  };
+  boxes.forEach((b) => {
+    b.checked = !!done[b.dataset.k];
+    b.addEventListener("change", () => {
+      done[b.dataset.k] = b.checked;
+      try { localStorage.setItem("microboy-checklist", JSON.stringify(done)); } catch (_) {}
+      progress();
+    });
+  });
+  progress();
+
+  // The form composes an email; nothing is sent from this page.
+  const EMAIL = "masato-void@protonmail.com";
+  const val = (id) => document.getElementById(id).value.trim();
+  function compose() {
+    const kind = document.querySelector('input[name="kind"]:checked').value;
+    const lines = [
+      val("what") || "(describe what happened)",
+      "",
+      ...(val("steps") ? ["Steps to reproduce:", val("steps"), ""] : []),
+      `Phone: ${val("phone") || "?"}`,
+      `Game: ${val("game") || "-"}`,
+      `Browser: ${navigator.userAgent}`,
+    ];
+    const tried = boxes.filter((b) => b.checked).map((b) => b.dataset.k);
+    if (tried.length) lines.push(`Tried: ${tried.join(", ")}`);
+    return { subject: `MicroBoy ${kind}`, body: lines.join("\n") };
+  }
+  document.getElementById("fb").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const status = document.getElementById("status");
+    if (!val("what")) {
+      status.textContent = "Tell us what happened first.";
+      document.getElementById("what").focus();
+      return;
+    }
+    const { subject, body } = compose();
+    location.href = `mailto:${EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    status.innerHTML = `If no email app opened, use <strong>Copy text</strong> and send it to <a href="mailto:${EMAIL}">${EMAIL}</a>.`;
+  });
+  document.getElementById("copy").addEventListener("click", async () => {
+    const { subject, body } = compose();
+    const status = document.getElementById("status");
+    try {
+      await navigator.clipboard.writeText(`To: ${EMAIL}\nSubject: ${subject}\n\n${body}`);
+      status.textContent = `Copied. Paste it into an email to ${EMAIL}.`;
+    } catch (_) {
+      status.textContent = `Couldn't copy. Please email ${EMAIL}.`;
+    }
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+.gradle/
+build/
+.cxx/
+local.properties
+*.iml
+.idea/
+.DS_Store
+captures/
+*.keystore
+*.jks
+keystore.properties
+# never commit ROMs/BIOS
+*.gba
+*.agb
+*.sav
+gba_bios.bin
+!testroms/**/*.gba

@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MicroBoy — GBA emulator for Android</title>
+  <meta name="description" content="MicroBoy is a GBA emulator for Android built on the mGBA core: real fast-forward, save states with thumbnails, themed touch controls, controller support and display filters.">
+  <meta name="theme-color" content="#14121F">
+  <meta property="og:title" content="MicroBoy — GBA emulator for Android">
+  <meta property="og:description" content="Accurate mGBA emulation, real fast-forward, save states, themed touch controls. $0.50 on Google Play, or build it yourself for free.">
+  <meta property="og:image" content="https://m4s4t0-v01d.github.io/GBA-Emulator/logo.png">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <link rel="icon" href="logo.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Silkscreen&display=swap">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap">
+    <a class="brand pixel" href="#top"><img src="logo.svg" alt="" width="32" height="32">MicroBoy</a>
+    <ul>
+      <li><a href="#features">Features</a></li>
+      <li><a href="#themes">Themes</a></li>
+      <li><a href="#compare">Compare</a></li>
+      <li class="keep"><a href="#get">Get it</a></li>
+      <li><a href="#build">Build</a></li>
+      <li class="keep"><a href="https://github.com/M4S4T0-V01D/GBA-Emulator">GitHub</a></li>
+    </ul>
+  </div>
+</header>
+
+<main id="top">
+
+  <section class="hero">
+    <div class="wrap">
+      <div>
+        <span class="eyebrow">GBA emulator for Android</span>
+        <h1><span class="grad">MicroBoy</span></h1>
+        <p class="lede">Your game backups, in your pocket. Built on the <strong>mGBA</strong> core, with <strong>real fast-forward</strong>, save states with thumbnails, and touch controls you can rearrange.</p>
+        <div class="cta">
+          <a class="btn btn-primary" data-play-link href="#get" aria-disabled="true">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M4 2.6v18.8c0 .5.5.8 1 .6l15.8-9.4c.4-.2.4-.9 0-1.1L5 2c-.5-.3-1 .1-1 .6z"/></svg>
+            Google Play <small><span data-price>$0.50</span> · <span data-play-status>coming soon</span></small>
+          </a>
+          <a class="btn btn-ghost" href="#build">Build it yourself — free</a>
+        </div>
+        <p class="fineprint">Android 8.0 or newer. No ads, no accounts, no tracking. No games included.</p>
+      </div>
+
+      <div class="device" aria-label="Illustration of MicroBoy running on a phone">
+        <div class="device-body">
+          <div class="screen-frame">
+            <canvas id="screen" width="240" height="160" aria-hidden="true"></canvas>
+            <div class="ff" role="group" aria-label="Fast-forward demo">
+              <span>Speed</span>
+              <span class="ff-chips">
+                <button type="button" data-speed="1" aria-pressed="true">1×</button>
+                <button type="button" data-speed="2" aria-pressed="false">2×</button>
+                <button type="button" data-speed="4" aria-pressed="false">4×</button>
+                <button type="button" data-speed="8" aria-pressed="false">8×</button>
+              </span>
+            </div>
+          </div>
+          <div class="pad" aria-hidden="true">
+            <svg width="92" height="92" viewBox="0 0 92 92">
+              <path class="shade" d="M32 4h28a4 4 0 0 1 4 4v24h20a4 4 0 0 1 4 4v20a4 4 0 0 1-4 4H64v24a4 4 0 0 1-4 4H32a4 4 0 0 1-4-4V60H8a4 4 0 0 1-4-4V36a4 4 0 0 1 4-4h20V8a4 4 0 0 1 4-4z"/>
+            </svg>
+            <svg width="104" height="80" viewBox="0 0 104 80">
+              <circle class="shade" cx="30" cy="52" r="20"/>
+              <circle class="shade" cx="76" cy="26" r="20"/>
+            </svg>
+          </div>
+          <div class="pills" aria-hidden="true"><span></span><span></span></div>
+          <div class="speaker" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        </div>
+        <a class="device-caption" href="#demo">This scene is a real GBA ROM. Download it ↓</a>
+      </div>
+    </div>
+  </section>
+
+  <section id="demo" class="demo-band">
+    <div class="wrap demo">
+      <div>
+        <h2>Take the demo home</h2>
+        <p>The scene above is also a real GBA program, a 28&nbsp;KB ROM that runs forever. Load it in MicroBoy or any other GBA emulator, then turn on fast-forward and watch the frame counter race.</p>
+        <ul class="keys">
+          <li><kbd>A</kbd> <kbd class="arrow">→</kbd> next theme</li>
+          <li><kbd>B</kbd> <kbd class="arrow">←</kbd> previous theme</li>
+          <li><kbd>Start</kbd> music on or off</li>
+        </ul>
+      </div>
+      <div class="demo-get">
+        <a class="btn btn-primary" href="microboy-demo.gba" download>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>
+          Download microboy-demo.gba
+        </a>
+        <p class="fineprint">Free and public domain (CC0). The <a href="https://github.com/M4S4T0-V01D/GBA-Emulator/tree/main/testroms/microboy-demo">source</a> is about 250 lines of C. The ROM has no boot logo, so it runs in emulators; to run it on real hardware, patch it with gbafix first.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="features">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Everything the handheld did. Then some.</h2>
+        <p>A native Kotlin app built around mGBA, one of the most accurate GBA emulators there is.</p>
+      </div>
+      <div class="features">
+        <article class="card">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="6" width="12" height="12" rx="2"/><path d="M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4"/></svg></div>
+          <h3>Accurate emulation</h3>
+          <p>The mGBA core handles the CPU, graphics, sound, DMA, timers, and SRAM, Flash and EEPROM saves, plus the real-time clock some games rely on.</p>
+        </article>
+        <article class="card">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5l8 7-8 7zM13 5l8 7-8 7z"/></svg></div>
+          <h3>Real fast-forward</h3>
+          <p>Frames really run 2×, 3×, 4× or 8× faster, or as fast as your phone allows. Hold to speed up, or tap to toggle it.</p>
+        </article>
+        <article class="card">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h11l3 3v15H5z"/><path d="M8 3v5h7V3M8 21v-7h8v7"/></svg></div>
+          <h3>Save states</h3>
+          <p>Nine slots plus Auto, with thumbnails, quick save and load, and export and import. It always asks before overwriting. Your in-game saves stay separate.</p>
+        </article>
+        <article class="card">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="9" rx="1.5"/><rect x="3" y="15" width="18" height="6" rx="1.5"/></svg></div>
+          <h3>Your library</h3>
+          <p>Games stay where they already are on your device. MicroBoy tracks recently played, playtime and box art.</p>
+        </article>
+        <article class="card">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11V5a2 2 0 0 1 4 0v5l5 1.2a2 2 0 0 1 1.5 2.3L18.6 19a2 2 0 0 1-2 1.6H10a2 2 0 0 1-1.6-.8L5 15.3a1.7 1.7 0 0 1 2.5-2.2L9 14.5"/></svg></div>
+          <h3>Touch controls</h3>
+          <p>Multi-touch and themed, with haptics. Move and resize every button, with separate layouts for portrait and landscape.</p>
+        </article>
+        <article class="card">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h10a5 5 0 0 1 4.9 6l-.9 4.4a2.3 2.3 0 0 1-4 1L15 16H9l-2 2.4a2.3 2.3 0 0 1-4-1L2.1 13A5 5 0 0 1 7 7z"/><path d="M7 10v4M5 12h4M16 11h.01M18 13h.01"/></svg></div>
+          <h3>Controllers</h3>
+          <p>Bluetooth and USB gamepads work right away, and every button can be remapped.</p>
+        </article>
+        <article class="card">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="14" rx="2"/><path d="M2 8h20M2 12h20M8 21h8"/></svg></div>
+          <h3>Display options</h3>
+          <p>Fit, integer or stretch scaling. Scanline, LCD-grid and CRT filters, smoothing, brightness, saturation and GBA color correction.</p>
+        </article>
+        <article class="card">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/></svg></div>
+          <h3>Low-latency audio</h3>
+          <p>AAudio output with dynamic rate control, so sound stays in sync without crackles. The game pauses when you unplug your headphones.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section id="themes">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Eleven themes. Try one on.</h2>
+        <p>These are the app's own color themes. Pick one and this page changes to match.</p>
+      </div>
+      <div class="themes" id="theme-list" role="group" aria-label="Color themes"></div>
+      <p class="theme-note">The app also has a fully custom theme with an HSV color picker, and on Android 12+ it can follow your wallpaper colors.</p>
+    </div>
+  </section>
+
+  <section id="compare">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>How MicroBoy compares</h2>
+        <p>These are the four best-known GBA emulators on Android. They're all good, and here's how MicroBoy stacks up, including what it doesn't do yet.</p>
+      </div>
+
+      <div class="diffs">
+        <article class="card">
+          <h3>mGBA, in an app built only for GBA</h3>
+          <p>Lemuroid and RetroArch also run mGBA, but inside frontends built for dozens of systems. My Boy! and Pizza Boy use their own cores. MicroBoy is the only one of these that pairs mGBA with an app designed only for GBA.</p>
+        </article>
+        <article class="card">
+          <h3>Everything included, for 50¢</h3>
+          <p>There's no Pro tier and no locked features. It costs about a tenth of the other paid GBA apps, and the source is public, so you can build it for free.</p>
+        </article>
+        <article class="card">
+          <h3>Your saves are hard to lose</h3>
+          <p>In-game saves and save states are kept completely separate, and loading a state never overwrites your in-game save. You get nine slots plus Auto, each with a thumbnail, and MicroBoy asks before overwriting anything.</p>
+        </article>
+        <article class="card">
+          <h3>It looks like yours</h3>
+          <p>Eleven themes, a custom theme with an HSV picker, and your wallpaper's colors on Android 12+. The theme colors the menus and the on-screen controller too.</p>
+        </article>
+      </div>
+
+      <div class="table-scroll" role="region" aria-label="Feature comparison table" tabindex="0">
+        <table class="compare">
+          <thead>
+            <tr>
+              <th scope="col"><span class="sr-only">Feature</span></th>
+              <th scope="col" class="us">MicroBoy</th>
+              <th scope="col">My Boy!</th>
+              <th scope="col">Pizza Boy A</th>
+              <th scope="col">Lemuroid</th>
+              <th scope="col">RetroArch</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><th scope="row">Price</th><td class="us"><span data-price>$0.50</span>, or free to build</td><td>$4.99</td><td>Free; Pro $5.99</td><td>Free</td><td>Free</td></tr>
+            <tr><th scope="row">Ads</th><td class="us">None</td><td>None</td><td>None</td><td>None</td><td>None</td></tr>
+            <tr><th scope="row">Source code public</th><td class="us y">Yes</td><td class="n">No</td><td class="n">No</td><td class="y">Yes (GPL-3)</td><td class="y">Yes (GPL)</td></tr>
+            <tr><th scope="row">GBA emulation core</th><td class="us">mGBA</td><td>Its own (JIT)</td><td>Its own</td><td>mGBA</td><td>mGBA and others</td></tr>
+            <tr><th scope="row">Systems</th><td class="us">GBA</td><td>GBA</td><td>GBA</td><td>23 systems</td><td>Dozens</td></tr>
+            <tr><th scope="row">Save states</th><td class="us y">9 slots + Auto, thumbnails</td><td class="y">Yes, with screenshots</td><td class="y">Yes; quick and auto save in Pro</td><td class="y">Slots + auto</td><td class="y">Yes</td></tr>
+            <tr><th scope="row">Fast-forward</th><td class="us y">2×–8× or unlimited</td><td class="y">Yes, plus slow motion</td><td class="y">Yes, plus slow motion</td><td class="y">Yes</td><td class="y">Yes</td></tr>
+            <tr><th scope="row">Rewind</th><td class="us n">Not yet</td><td class="u">Not listed</td><td class="p">Pro</td><td class="u">Not listed</td><td class="y">Yes</td></tr>
+            <tr><th scope="row">Cheat codes</th><td class="us n">Not yet</td><td class="y">Yes</td><td class="p">Pro</td><td class="u">Not listed</td><td class="y">Yes</td></tr>
+            <tr><th scope="row">Link cable / multiplayer</th><td class="us n">Not yet</td><td class="y">Bluetooth and Wi-Fi</td><td class="p">Pro: local and Wi-Fi</td><td class="y">Several gamepads, one device</td><td class="y">Netplay</td></tr>
+            <tr><th scope="row">Gyro, tilt and solar sensors</th><td class="us n">Not yet</td><td class="y">Yes</td><td class="p">Pro</td><td class="y">Tilt to stick</td><td class="u">Not listed</td></tr>
+            <tr><th scope="row">Cloud save sync</th><td class="us n">Android backup only</td><td class="y">Google Drive</td><td class="p">Pro: Google Drive</td><td class="y">Yes</td><td class="u">Not listed</td></tr>
+            <tr><th scope="row">Look and feel</th><td class="us y">11 themes + custom + wallpaper colors</td><td>Shaders, layout editor</td><td>Shaders; skins in Pro</td><td>LCD/CRT simulation</td><td>Shaders, overlays</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="table-note">Prices and features come from each app's US Google Play listing and Lemuroid's GitHub page, checked 15 October 2026. Prices vary by country. "Not listed" means the store listing doesn't mention the feature; the app may still have it. All names are the property of their respective owners.</p>
+    </div>
+  </section>
+
+  <section id="get">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Two ways to get it</h2>
+        <p>The app is the same either way. Buying it on Google Play gets you automatic updates and supports development.</p>
+      </div>
+      <div class="plans">
+        <article class="card plan featured">
+          <span class="tag" data-play-status>coming soon</span>
+          <h3 style="margin-top:14px">Google Play</h3>
+          <div class="price"><span data-price>$0.50</span><small>one time</small></div>
+          <ul>
+            <li>Installs and updates automatically</li>
+            <li>No ads, no subscriptions, no in-app purchases</li>
+            <li>Supports the developer</li>
+          </ul>
+          <a class="btn btn-primary" data-play-link href="#get" aria-disabled="true">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M4 2.6v18.8c0 .5.5.8 1 .6l15.8-9.4c.4-.2.4-.9 0-1.1L5 2c-.5-.3-1 .1-1 .6z"/></svg>
+            <span data-play-cta>Coming soon to Google Play</span>
+          </a>
+        </article>
+        <article class="card plan">
+          <span class="tag">from source</span>
+          <h3 style="margin-top:14px">Build it yourself</h3>
+          <div class="price">Free<small>bring a PC</small></div>
+          <ul>
+            <li>The full source code is on GitHub</li>
+            <li>Needs JDK 17 and the Android SDK</li>
+            <li>You sideload and update it yourself</li>
+          </ul>
+          <a class="btn btn-ghost" href="#build">Show me how</a>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section id="build">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Build it yourself</h2>
+        <p>These steps work on Linux, macOS, or Windows with Git Bash. The first build takes a few minutes, because it compiles mGBA for three CPU types.</p>
+      </div>
+      <ol class="steps">
+        <li><div>
+          <h3>Install the tools</h3>
+          <p>You need <strong>JDK 17</strong> and the <strong>Android SDK</strong>; installing Android Studio gets you both. Gradle downloads the right platform, NDK (27.2.12479018) and CMake (3.22.1) on the first build, once you have accepted the SDK licenses:</p>
+          <div class="code"><pre><code>sdkmanager --licenses</code></pre></div>
+        </div></li>
+        <li><div>
+          <h3>Get the source</h3>
+          <p>Include <code>--recursive</code>, which also downloads the mGBA core.</p>
+          <div class="code"><pre><code>git clone --recursive https://github.com/M4S4T0-V01D/GBA-Emulator.git
+cd GBA-Emulator</code></pre></div>
+        </div></li>
+        <li><div>
+          <h3>Point it at your SDK</h3>
+          <div class="code"><pre><code>echo "sdk.dir=$HOME/Android/Sdk" &gt; local.properties</code></pre></div>
+        </div></li>
+        <li><div>
+          <h3>Build</h3>
+          <div class="code"><pre><code>./gradlew assembleRelease
+<span class="c"># → app/build/outputs/apk/release/app-release.apk</span></code></pre></div>
+          <p>Without a keystore of your own, the build is signed with your debug key, which is fine for sideloading.</p>
+        </div></li>
+        <li><div>
+          <h3>Install</h3>
+          <p>Copy the APK to your phone and open it, allowing installs from that app when Android asks. Or, with USB debugging on:</p>
+          <div class="code"><pre><code>adb install app/build/outputs/apk/release/app-release.apk</code></pre></div>
+        </div></li>
+      </ol>
+    </div>
+  </section>
+
+  <section id="faq">
+    <div class="wrap">
+      <div class="section-head"><h2>Questions</h2></div>
+      <div class="faq">
+        <details>
+          <summary>Does MicroBoy come with games?</summary>
+          <p>No. MicroBoy includes no games and no BIOS. Use backups of games you own.</p>
+        </details>
+        <details>
+          <summary>Do I need a BIOS file?</summary>
+          <p>No. mGBA has a built-in BIOS replacement that runs nearly every game. You can choose your own BIOS dump in Settings if you prefer.</p>
+        </details>
+        <details>
+          <summary>Can I bring saves from another emulator?</summary>
+          <p>Yes. Each game's info screen can import and export a standard <code>.sav</code> file, and save states can be exported and imported too.</p>
+        </details>
+        <details>
+          <summary>Which phones does it run on?</summary>
+          <p>Any phone or tablet running Android 8.0 or newer, on 64-bit ARM, 32-bit ARM or x86_64 (Chromebooks and emulators).</p>
+        </details>
+        <details>
+          <summary>Does it collect any data?</summary>
+          <p>No. There are no accounts, ads or analytics. The only network feature is an optional box-art download, which is off by default. See the <a href="privacy.html">privacy policy</a>.</p>
+        </details>
+        <details>
+          <summary>Why pay if I can build it for free?</summary>
+          <p>Convenience. The Play version installs in one tap and updates on its own. Paying also supports development. If you'd rather build it, go ahead.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <div>
+      <div class="who">MicroBoy — developed by <strong>M4S4T0</strong></div>
+      <p>Emulation by <a href="https://mgba.io">mGBA</a> © Jeffrey Pfau and contributors, used under the Mozilla Public License 2.0.</p>
+      <p>MicroBoy is not affiliated with or endorsed by Nintendo. Game Boy Advance is a trademark of Nintendo.</p>
+    </div>
+    <nav aria-label="Footer">
+      <a href="https://github.com/M4S4T0-V01D/GBA-Emulator">Source</a>
+      <a href="https://github.com/M4S4T0-V01D/GBA-Emulator/issues">Report a bug</a>
+      <a href="privacy.html">Privacy</a>
+    </nav>
+  </div>
+</footer>
+
+<script src="site.js"></script>
+</body>
+</html>

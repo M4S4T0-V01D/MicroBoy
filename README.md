@@ -14,11 +14,13 @@ running the [mGBA](https://mgba.io) emulation core.
 - 11 color themes, plus a fully custom theme (HSV picker) and wallpaper colors on Android 12+.
 - Low-latency AAudio output with dynamic rate control, audio-focus handling, and auto-pause when headphones are unplugged.
 
+Website: **https://m4s4t0-v01d.github.io/GBA-Emulator/** (source in [docs/](docs/), served by GitHub Pages).
+
 See [PLAN.md](PLAN.md) for the design rationale.
 
 ## Building
 
-Requirements: JDK 17, Android SDK (platform 35, build-tools 35), NDK 27.2.12479018, CMake 3.22.1.
+Requirements: JDK 17, Android SDK (platform 36), NDK 27.2.12479018, CMake 3.22.1. Gradle downloads missing SDK parts on the first build once the SDK licenses are accepted (`sdkmanager --licenses`).
 
 ```sh
 git clone --recursive https://github.com/M4S4T0-V01D/GBA-Emulator.git
@@ -95,6 +97,9 @@ MicroBoy ships no BIOS. mGBA's built-in open-source BIOS replacement is used unl
 | ROM | Source | License | Purpose |
 |---|---|---|---|
 | `testroms/microboy-test/microboy-test.gba` | written for this project (`build.sh`, clang + lld) | public domain | input, audio, frame counter (speed), SRAM persistence |
+| `testroms/microboy-demo/microboy-demo.gba` | written for this project (`build.sh`: `gen.py` + clang + lld) | CC0 | the website's endless pixel scene: tiled-background parallax, sprites, palette themes, PSG music. Downloadable from the website |
+
+`tools/romshot.sh BUILD_DIR` builds `romshot`, which runs a ROM headless on the mGBA submodule and writes PPM screenshots plus the audio level. That lets you check homebrew ROMs without a device: `romshot ROM OUTDIR 60 600 700:a 760` saves frames 60, 600 and 760, and presses A at frame 700.
 | `testroms/jsmolka/*.gba` | [jsmolka/gba-tests](https://github.com/jsmolka/gba-tests) | MIT | CPU (ARM/Thumb), memory, PPU, SRAM/Flash saves |
 
 The project includes no commercial ROMs or BIOS files.
@@ -114,7 +119,7 @@ MPL-2.0 is file-level copyleft: mGBA's source files must stay available under MP
 
 See the testing section below for what has been verified.
 
-- No physical-device testing has been done yet. Testing so far ran on an x86_64 Android emulator with KVM.
+- Tested on one physical phone so far (2026-10-15): video, input and cartridge saves work. Audio was silent before commit f516356, which fixed it.
 - Solar-sensor, tilt, rumble and link-cable peripherals are not emulated in the frontend.
 - Box-art download only works when the ROM's file name matches No-Intro naming.
 - Game Boy / Game Boy Color games are not supported. mGBA's GB core is disabled to keep the app focused.
@@ -123,10 +128,9 @@ See the testing section below for what has been verified.
 
 Done and building: native mGBA bridge, AAudio, GL renderer, touch and controller input, library, save states, settings, themes, logo.
 
-**Not yet verified at runtime.** The build machine couldn't boot the Android emulator, so nothing has been run on a device or emulator yet. Next steps:
+**First device test passed** (2026-10-15, Pokémon Emerald): video, input and cartridge saves work. The silent-audio bug found there is fixed. The app targets API 36, as Google Play requires.
 
-1. Install the debug APK. Load `testroms/microboy-test/microboy-test.gba` and the jsmolka ROMs.
-2. Verify video, audio, touch input, fast-forward speed (the binary frame counter on the test ROM), SRAM persistence (press START, restart the app, and check that the counter persists), and save states.
+Requested next, not started: rewind, slow motion, gyro/tilt/solar sensors, link cable / multiplayer, and cloud save sync.
 
 Planned visual-engine work, requested and not started:
 

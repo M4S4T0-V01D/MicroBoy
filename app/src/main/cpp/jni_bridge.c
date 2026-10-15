@@ -1,4 +1,4 @@
-// JNI bridge between the Kotlin frontend (dev.m4s4t0.prism.emulation.NativeCore)
+// JNI bridge between the Kotlin frontend (dev.m4s4t0.microboy.emulation.NativeCore)
 // and the mGBA core.
 //
 // Threading contract: every function that touches `core` is called from the
@@ -26,12 +26,12 @@
 
 #include "audio.h"
 
-#define LOG_TAG "PrismCore"
+#define LOG_TAG "MicroBoyCore"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
 #define LOGW(...) __android_log_print(ANDROID_LOG_WARN, LOG_TAG, __VA_ARGS__)
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
 
-#define JNI(name) Java_dev_m4s4t0_prism_emulation_NativeCore_##name
+#define JNI(name) Java_dev_m4s4t0_microboy_emulation_NativeCore_##name
 
 #define WIDTH GBA_VIDEO_HORIZONTAL_PIXELS
 #define HEIGHT GBA_VIDEO_VERTICAL_PIXELS

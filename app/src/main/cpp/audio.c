@@ -5,7 +5,7 @@
 #include <stdatomic.h>
 #include <string.h>
 
-#define LOG_TAG "PrismAudio"
+#define LOG_TAG "MicroBoyAudio"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
 #define LOGW(...) __android_log_print(ANDROID_LOG_WARN, LOG_TAG, __VA_ARGS__)
 

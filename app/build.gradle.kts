@@ -15,12 +15,12 @@ val keystoreProps = Properties().apply {
 }
 
 android {
-    namespace = "dev.m4s4t0.prism"
+    namespace = "dev.m4s4t0.microboy"
     compileSdk = 35
     ndkVersion = "27.2.12479018"
 
     defaultConfig {
-        applicationId = "dev.m4s4t0.prism"
+        applicationId = "dev.m4s4t0.microboy"
         minSdk = 26
         targetSdk = 35
         versionCode = 1

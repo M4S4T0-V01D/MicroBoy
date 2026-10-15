@@ -14,7 +14,7 @@ running the [mGBA](https://mgba.io) emulation core.
 - 11 color themes, plus a fully custom theme (HSV picker) and wallpaper colors on Android 12+.
 - Low-latency AAudio output with dynamic rate control, audio-focus handling, and auto-pause when headphones are unplugged.
 
-Website: **https://m4s4t0-v01d.github.io/GBA-Emulator/** (source in [docs/](docs/), served by GitHub Pages).
+Website: **https://m4s4t0-v01d.github.io/MicroBoy/** (source in [docs/](docs/), served by GitHub Pages).
 
 See [PLAN.md](PLAN.md) for the design rationale.
 
@@ -23,8 +23,8 @@ See [PLAN.md](PLAN.md) for the design rationale.
 Requirements: JDK 17, Android SDK (platform 36), NDK 27.2.12479018, CMake 3.22.1. Gradle downloads missing SDK parts on the first build once the SDK licenses are accepted (`sdkmanager --licenses`).
 
 ```sh
-git clone --recursive https://github.com/M4S4T0-V01D/GBA-Emulator.git
-cd GBA-Emulator
+git clone --recursive https://github.com/M4S4T0-V01D/MicroBoy.git
+cd MicroBoy
 echo "sdk.dir=$HOME/Android/Sdk" > local.properties
 ./gradlew assembleDebug        # app/build/outputs/apk/debug/app-debug.apk
 ./gradlew assembleRelease      # app/build/outputs/apk/release/app-release.apk

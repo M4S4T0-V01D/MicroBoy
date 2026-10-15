@@ -12,5 +12,5 @@ dependencyResolutionManagement {
         mavenCentral()
     }
 }
-rootProject.name = "GBA-Emulator"
+rootProject.name = "MicroBoy"
 include(":app")

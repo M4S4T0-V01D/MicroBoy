@@ -16,13 +16,13 @@ val keystoreProps = Properties().apply {
 
 android {
     namespace = "dev.m4s4t0.microboy"
-    compileSdk = 35
+    compileSdk = 36
     ndkVersion = "27.2.12479018"
 
     defaultConfig {
         applicationId = "dev.m4s4t0.microboy"
         minSdk = 26
-        targetSdk = 35
+        targetSdk = 36  // Google Play requires API 36 from 2026-08-31
         versionCode = 1
         versionName = "1.0.0"
 
@@ -57,6 +57,8 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            // Ships native symbol tables in the bundle so Play Console can symbolicate native crashes.
+            ndk { debugSymbolLevel = "SYMBOL_TABLE" }
             signingConfig = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
         }
     }

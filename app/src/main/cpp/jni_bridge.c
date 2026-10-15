@@ -184,6 +184,10 @@ JNIEXPORT jboolean JNICALL JNI(nativeLoadRom)(JNIEnv* env, jclass clazz, jbyteAr
     mCoreInitConfig(core, NULL);
     core->opts.skipBios = skipBios;
     core->opts.useBios = biosPath != NULL;
+    // GBACoreCreate zeroes opts, and loading the config copies opts.volume into
+    // the core's master volume, so it must be set or the game is silent.
+    // Output volume is applied separately in audio.c.
+    core->opts.volume = GBA_AUDIO_VOLUME_MAX;
     mCoreLoadConfig(core);
 
     core->setVideoBuffer(core, backBuffer, WIDTH);

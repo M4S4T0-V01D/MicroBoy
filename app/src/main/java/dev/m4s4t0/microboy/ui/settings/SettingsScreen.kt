@@ -410,6 +410,7 @@ private fun AboutSection(onReset: () -> Unit) {
         HorizontalDivider()
         Column(Modifier.padding(16.dp)) {
             Text("MicroBoy ${BuildConfig.VERSION_NAME}", style = MaterialTheme.typography.titleMedium)
+            Text("Developed by M4S4T0", style = MaterialTheme.typography.bodyMedium)
             Spacer(Modifier.height(4.dp))
             Text(
                 "Emulation by mGBA 0.10.5 © Jeffrey Pfau and contributors, used under the Mozilla Public License 2.0. " +

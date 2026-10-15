@@ -1,7 +1,8 @@
 // MicroBoy demo ROM: the pixel scene from the MicroBoy website, as an endless
 // GBA program. Three parallax ridges scroll forever on hardware backgrounds,
 // stars twinkle, the title bobs and a frame counter ticks, so fast-forward in
-// an emulator is easy to see. A soft chiptune loop plays on the PSG.
+// an emulator is easy to see. "Pocket Lullaby", a slow looping tune for all
+// four GBA sound channels, plays on the PSG.
 //
 // Controls: A / Right next theme, B / Left previous theme, Start toggles music.
 // Written for this project; public domain / CC0.
@@ -124,25 +125,69 @@ static void showName(int t) {
 }
 
 // --- music -----------------------------------------------------------------------
+// "Pocket Lullaby" (see gen.py): one 16th-note step every FRAMES_PER_STEP
+// frames, about 82 BPM. Each track holds a register value per step:
+// 0 = keep playing, 0xFFFF = silence.
 
-#define FRAMES_PER_STEP 18  // one eighth note, ~100 BPM
+#define FRAMES_PER_STEP 11
+#define SOUND3CNT_L REG16(0x4000070)
+#define SOUND3CNT_H REG16(0x4000072)
+#define SOUND3CNT_X REG16(0x4000074)
+#define SOUND4CNT_L REG16(0x4000078)
+#define SOUND4CNT_H REG16(0x400007C)
+#define WAVE_RAM ((volatile uint16_t*) 0x4000090)
 
-// `step` runs 0..ARP_LEN-1; a new bar (and bass note) starts every 8 steps.
+#define ENV(vol, step, up) ((uint16_t) (((vol) << 12) | ((up) << 11) | ((step) << 8)))
+#define DUTY_12 (0 << 6)
+#define DUTY_25 (1 << 6)
+
+static void loadWave(void) {
+    SOUND3CNT_L = 0x40;  // play bank 1 so writes land in bank 0
+    for (int i = 0; i < 8; ++i) {
+        WAVE_RAM[i] = (uint16_t) (waveTable[2 * i] | (waveTable[2 * i + 1] << 8));
+    }
+    SOUND3CNT_L = 0x80;  // channel on, one 32-sample bank (bank 0)
+}
+
 static void playStep(int step) {
-    SOUND2CNT_L = (2 << 6) | (9 << 12) | (0 << 11) | 3;  // 50% duty, volume 9, fade every 3/64 s
-    SOUND2CNT_H = 0x8000 | arpNotes[step];
-    if ((step & 7) == 0) {
-        SOUND1CNT_L = 0;                                     // no sweep
-        SOUND1CNT_H = (2 << 6) | (11 << 12) | (0 << 11) | 7; // slow fade bass
-        SOUND1CNT_X = 0x8000 | bassNotes[step >> 3];
+    uint16_t lead = leadTrack[step];
+    if (lead == 0xFFFF) {
+        SOUND1CNT_H = ENV(0, 0, 0);  // rest
+        SOUND1CNT_X = 0x8000;
+    } else if (lead) {
+        // Music-box pluck: starts at volume 11 and fades over about a second.
+        SOUND1CNT_H = DUTY_25 | ENV(11, 5, 0);
+        SOUND1CNT_X = 0x8000 | lead;
+    }
+    uint16_t harm = harmTrack[step];
+    if (harm) {
+        SOUND2CNT_L = DUTY_12 | ENV(5, 2, 0);
+        SOUND2CNT_H = 0x8000 | harm;
+    }
+    uint16_t bass = bassTrack[step];
+    if (bass) {
+        SOUND3CNT_H = 2 << 13;  // 50% volume
+        SOUND3CNT_X = 0x8000 | bass;
+    }
+    switch (drumTrack[step]) {
+    case 1:  // hi-hat: high, short
+        SOUND4CNT_L = ENV(3, 1, 0);
+        SOUND4CNT_H = 0x8000 | (1 << 4) | 0;
+        break;
+    case 2:  // soft snare: lower, a little longer
+        SOUND4CNT_L = ENV(6, 2, 0);
+        SOUND4CNT_H = 0x8000 | (4 << 4) | 2;
+        break;
     }
 }
 
 static void soundOn(int on) {
     if (on) {
-        SOUNDCNT_X = 0x80;
-        SOUNDCNT_L = 0x3377;  // channels 1 and 2 on both sides, master volume 7
+        SOUNDCNT_X = 0x80;    // master enable first, or the other registers ignore writes
+        SOUNDCNT_L = 0xFF77;  // all four channels on both sides, master volume 7
         SOUNDCNT_H = 0x0002;  // PSG at 100%
+        SOUND1CNT_L = 0;      // no sweep
+        loadWave();
     } else {
         SOUNDCNT_X = 0;
     }
@@ -243,11 +288,12 @@ int main(void) {
             music = !music;
             soundOn(music);
             stepTimer = 0;
+            step = 0;  // the song restarts from the top
         }
 
         if (music && stepTimer-- <= 0) {
             playStep(step);
-            if (++step == ARP_LEN) step = 0;
+            if (++step == SONG_STEPS) step = 0;
             stepTimer = FRAMES_PER_STEP - 1;
         }
         tickCounter();

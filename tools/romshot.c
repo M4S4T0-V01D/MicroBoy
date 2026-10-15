@@ -5,7 +5,8 @@
 //
 // Each EVENT is FRAME (save OUTDIR/FRAME.ppm) or FRAME:KEYS (hold KEYS from
 // that frame for 4 frames). KEYS uses a b s(elect) t(start) r l u d R L.
-// Prints the audio level so silent output is obvious.
+// Prints the audio level so silent output is obvious. With ROMSHOT_WAV=path it
+// also writes the audio (48 kHz stereo) to a WAV file.
 //
 // Build against a host libmgba (see tools/romshot.sh).
 #include <mgba/core/blip_buf.h>
@@ -73,6 +74,9 @@ int main(int argc, char** argv) {
     double sumSq = 0;
     long samples = 0;
     int peak = 0;
+    const char* wavPath = getenv("ROMSHOT_WAV");
+    FILE* wav = wavPath ? fopen(wavPath, "wb") : NULL;
+    if (wav) fseek(wav, 44, SEEK_SET);
     int held = 0, holdUntil = -1;
     static int16_t audio[4096 * 2];
     for (int frame = 0; frame <= last; ++frame) {
@@ -88,15 +92,17 @@ int main(int argc, char** argv) {
         core->runFrame(core);
 
         blip_t* left = core->getAudioChannel(core, 0);
+        blip_t* right = core->getAudioChannel(core, 1);
         int n;
-        while ((n = blip_read_samples(left, audio, 4096, false)) > 0) {
+        while ((n = blip_read_samples(left, audio, 4096, true)) > 0) {
+            blip_read_samples(right, audio + 1, n, true);
             for (int s = 0; s < n; ++s) {
-                sumSq += (double) audio[s] * audio[s];
-                if (abs(audio[s]) > peak) peak = abs(audio[s]);
+                sumSq += (double) audio[2 * s] * audio[2 * s];
+                if (abs(audio[2 * s]) > peak) peak = abs(audio[2 * s]);
             }
+            if (wav) fwrite(audio, 4, (size_t) n, wav);
             samples += n;
         }
-        blip_clear(core->getAudioChannel(core, 1));
 
         for (int i = 3; i < argc; ++i) {
             if (!strchr(argv[i], ':') && atoi(argv[i]) == frame) {
@@ -107,6 +113,16 @@ int main(int argc, char** argv) {
         }
     }
     printf("audio: rms %.0f, peak %d over %ld samples\n", samples ? sqrt(sumSq / samples) : 0.0, peak, samples);
+    if (wav) {
+        uint32_t data = (uint32_t) samples * 4, rate = 48000, byteRate = rate * 4, riff = 36 + data;
+        uint16_t fmt[] = { 1, 2 }, align[] = { 4, 16 };
+        uint32_t fmtLen = 16;
+        fseek(wav, 0, SEEK_SET);
+        fwrite("RIFF", 1, 4, wav); fwrite(&riff, 4, 1, wav); fwrite("WAVEfmt ", 1, 8, wav);
+        fwrite(&fmtLen, 4, 1, wav); fwrite(fmt, 2, 2, wav); fwrite(&rate, 4, 1, wav);
+        fwrite(&byteRate, 4, 1, wav); fwrite(align, 2, 2, wav); fwrite("data", 1, 4, wav); fwrite(&data, 4, 1, wav);
+        fclose(wav);
+    }
     core->deinit(core);
     return 0;
 }

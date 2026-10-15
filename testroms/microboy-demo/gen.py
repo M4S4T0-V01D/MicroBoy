@@ -228,24 +228,125 @@ def title_bitmap():
 
 
 # --- music --------------------------------------------------------------------------------
-# A slow Am – F – C – G arpeggio on square channel 2 over a bass note per bar on
-# channel 1. Values are GBA PSG frequency registers: 2048 - 131072 / Hz.
+# "Pocket Lullaby": a slow, original 16-bar tune in F major for the GBA's four
+# PSG channels, written for this ROM. It ends on C so it falls straight back
+# into bar 1 and loops forever.
+#   square 1  music-box lead (plucky, each note fades)
+#   square 2  soft broken chords
+#   wave      round bass from a sine-like wavetable
+#   noise     gentle hi-hats and a soft snare
+# The score is on a 16th-note grid; main.c plays one step every few frames.
 
-def note(name):
-    names = {"C": 0, "C#": 1, "D": 2, "D#": 3, "E": 4, "F": 5, "F#": 6, "G": 7, "G#": 8, "A": 9, "A#": 10, "B": 11}
-    pitch, octave = name[:-1], int(name[-1])
-    hz = 440 * 2 ** ((names[pitch] + 12 * (octave + 1) - 69) / 12)
-    return round(2048 - 131072 / hz)
+NOTE_NAMES = {"C": 0, "C#": 1, "Db": 1, "D": 2, "D#": 3, "Eb": 3, "E": 4, "F": 5, "F#": 6, "Gb": 6,
+              "G": 7, "G#": 8, "Ab": 8, "A": 9, "A#": 10, "Bb": 10, "B": 11}
 
 
-CHORDS = [
-    ("A2", ["A4", "C5", "E5", "A5", "E5", "C5", "B4", "C5"]),
-    ("F2", ["F4", "A4", "C5", "F5", "C5", "A4", "G4", "A4"]),
-    ("C3", ["E4", "G4", "C5", "E5", "C5", "G4", "E4", "G4"]),
-    ("G2", ["D4", "G4", "B4", "D5", "B4", "G4", "A4", "B4"]),
-]
-ARP = [note(n) for _, arp in CHORDS for n in arp]
-BASS = [note(b) for b, _ in CHORDS]
+def midi(name):
+    return NOTE_NAMES[name[:-1]] + 12 * (int(name[-1]) + 1)
+
+
+def hz(m):
+    return 440 * 2 ** ((m - 69) / 12)
+
+
+def square_reg(m):
+    return round(2048 - 131072 / hz(m))
+
+
+def wave_reg(m):
+    return round(2048 - 65536 / hz(m))
+
+
+STEPS_PER_BAR = 16
+
+LEAD = """
+A4:4 C5:2 A4:2 G4:4 F4:4 | A4:4 D5:4 C5:6 r:2 | D5:2 C5:2 Bb4:2 A4:2 G4:4 F4:4 | G4:6 A4:2 G4:4 E4:4 |
+A4:4 C5:2 A4:2 F5:4 E5:2 D5:2 | C5:4 A4:2 C5:2 E5:6 r:2 | D5:4 Bb4:4 C5:4 E4:4 | F4:12 r:4 |
+D5:2 F5:2 D5:2 Bb4:2 D5:4 C5:4 | E5:2 G5:2 E5:2 C5:2 E5:4 D5:4 | C5:4 E5:4 A5:6 G5:2 | F5:4 E5:2 D5:2 A4:8 |
+Bb4:2 D5:2 G5:4 F5:2 E5:2 D5:4 | E5:4 C5:4 G4:4 Bb4:4 | A4:4 C5:4 D5:4 F5:4 | E5:6 D5:2 C5:8
+"""
+
+# One chord per bar, or two separated by a space for half bars.
+CHORDS = ["F", "Dm", "Bb", "C", "F", "Am", "Bb C", "F",
+          "Bb", "C", "Am", "Dm", "Gm", "C7", "F Bb", "C"]
+
+TRIADS = {
+    "F": ["F", "A", "C"], "Dm": ["D", "F", "A"], "Bb": ["Bb", "D", "F"], "C": ["C", "E", "G"],
+    "Am": ["A", "C", "E"], "Gm": ["G", "Bb", "D"], "C7": ["C", "E", "Bb"],
+}
+
+# Noise hits per bar: h = hi-hat, s = snare, . = nothing. Busier in the bridge.
+DRUMS_A = "..h...h.s.h...h."
+DRUMS_B = "h.h.h.h.s.h.h.h."
+
+
+def parse_lead():
+    steps = [None] * (len(CHORDS) * STEPS_PER_BAR)
+    pos = 0
+    for tok in LEAD.replace("|", " ").split():
+        name, dur = tok.split(":")
+        steps[pos] = "rest" if name == "r" else midi(name)
+        pos += int(dur)
+    assert pos == len(steps), f"lead is {pos} steps, expected {len(steps)}"
+    return steps
+
+
+def voiced(root_names, low, high):
+    """Chord tones placed in [low, high), ascending."""
+    out = []
+    for n in root_names:
+        m = NOTE_NAMES[n] + 12 * 3
+        while m < low:
+            m += 12
+        while m >= high:
+            m -= 12
+        out.append(m)
+    return sorted(out)
+
+
+def parse_backing():
+    harm = [None] * (len(CHORDS) * STEPS_PER_BAR)
+    bass = [None] * len(harm)
+    for bar, spec in enumerate(CHORDS):
+        names = spec.split()
+        half = STEPS_PER_BAR // len(names)
+        for k, name in enumerate(names):
+            start = bar * STEPS_PER_BAR + k * half
+            lo, mid, hi = voiced(TRIADS[name], midi("F3"), midi("F4"))
+            # Broken chord in 8th notes: low, high, middle, high...
+            pattern = [lo, hi, mid, hi]
+            for i in range(0, half, 2):
+                harm[start + i] = pattern[(i // 2) % 4]
+            root = voiced(TRIADS[name][:1], midi("E2"), midi("E3"))[0]
+            fifth = root + 7
+            # Bass: root, fifth, root an octave up, fifth (quarters), or root/fifth in a half bar.
+            line = [root, fifth, root + 12, fifth] if half == 16 else [root, fifth]
+            for i, m in enumerate(line):
+                bass[start + i * 4] = m
+    return harm, bass
+
+
+def parse_drums():
+    out = []
+    for bar in range(len(CHORDS)):
+        pattern = DRUMS_B if 8 <= bar < 15 else DRUMS_A
+        out += [{"h": 1, "s": 2}.get(c, 0) for c in pattern]
+    return out
+
+
+lead_steps = parse_lead()
+harm_steps, bass_steps = parse_backing()
+drum_steps = parse_drums()
+SONG_STEPS = len(lead_steps)
+
+# Per-step register values for main.c: 0 = no change, 0xFFFF = silence.
+LEAD_TRACK = [0 if v is None else 0xFFFF if v == "rest" else square_reg(v) for v in lead_steps]
+HARM_TRACK = [0 if v is None else square_reg(v) for v in harm_steps]
+BASS_TRACK = [0 if v is None else wave_reg(v) for v in bass_steps]
+
+# 32 4-bit samples: a slightly rounded sine for a soft, warm bass.
+WAVE = [round(7.5 + 7.5 * math.sin(2 * math.pi * (i + 0.5) / 32) * 0.95) for i in range(32)]
+WAVE_BYTES = [(WAVE[i] << 4) | WAVE[i + 1] for i in range(0, 32, 2)]
 
 # --- emit ----------------------------------------------------------------------------------
 
@@ -274,7 +375,7 @@ out.append(f"#define STAR_TWINKLE {STAR_TWINKLE}")
 out.append(f"#define OBJ_TEXT {OBJ_TEXT}")
 out.append(f"#define OBJ_SHADOW {OBJ_SHADOW}")
 out.append(f"#define OBJ_COUNTER {OBJ_COUNTER}")
-out.append(f"#define ARP_LEN {len(ARP)}")
+out.append(f"#define SONG_STEPS {SONG_STEPS}")
 out.append("")
 out.append(c_array("uint32_t", "bgTiles", words(b"".join(tiles)), 8))
 for name, entries in maps.items():
@@ -286,8 +387,11 @@ names = [n.ljust(10)[:10] for n, *_ in THEMES]
 out.append(f"static const char themeNames[{len(THEMES)}][11] = {{ " + ", ".join(f'"{n}"' for n in names) + " };\n")
 out.append(c_array("uint16_t", "fontGlyphs", [int(FONT[c][::-1], 2) for c in FONT_CHARS]))
 out.append(f'static const char fontChars[] = "{FONT_CHARS}";\n')
-out.append(c_array("uint16_t", "arpNotes", ARP, 8))
-out.append(c_array("uint16_t", "bassNotes", BASS))
+out.append(c_array("uint16_t", "leadTrack", LEAD_TRACK, 16))
+out.append(c_array("uint16_t", "harmTrack", HARM_TRACK, 16))
+out.append(c_array("uint16_t", "bassTrack", BASS_TRACK, 16))
+out.append(c_array("uint8_t", "drumTrack", drum_steps, 32))
+out.append(c_array("uint8_t", "waveTable", WAVE_BYTES, 16))
 bob = [round(2 * math.sin(2 * math.pi * i / 112)) for i in range(112)]
 out.append(c_array("int8_t", "bobTable", bob, 16))
 

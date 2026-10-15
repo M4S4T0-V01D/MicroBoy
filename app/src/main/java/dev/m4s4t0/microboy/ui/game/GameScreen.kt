@@ -37,6 +37,7 @@ import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FastForward
 import androidx.compose.material.icons.filled.FastRewind
+import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.ScreenRotation
 import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material.icons.filled.SlowMotionVideo
@@ -150,6 +151,10 @@ fun GameScreen(a: GameActivity, glView: GLSurfaceView, controller: TouchControll
 
         a.slotMode?.let { mode -> SlotSheet(a, mode) }
 
+        if (!a.menuOpen) LinkBadge(a, Modifier.align(Alignment.TopCenter).safeDrawingPadding().padding(8.dp))
+        if (a.link.sheetOpen) LinkSheet(a)
+        LinkDialogs(a)
+
         // Transient message
         val msg = a.message
         LaunchedEffect(msg) {
@@ -200,7 +205,7 @@ private fun QuickMenu(a: GameActivity) {
             Column(Modifier.verticalScroll(rememberScrollState()).padding(20.dp)) {
                 Text(a.game.displayTitle, style = MaterialTheme.typography.titleLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(
-                    "Paused · ${Format.playtime(a.game.playtimeMs)} played",
+                    if (a.game.playtimeMs > 0) "Paused · ${Format.playtime(a.game.playtimeMs)} played" else "Paused",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -218,6 +223,7 @@ private fun QuickMenu(a: GameActivity) {
                     MenuTile(Icons.Default.Upload, "Quick load\n${slotName(s.defaultSlot)}") { a.loadState(s.defaultSlot) }
                     MenuTile(Icons.Default.RestartAlt, "Reset") { confirmReset = true }
                     MenuTile(if (s.muted) Icons.AutoMirrored.Filled.VolumeOff else Icons.AutoMirrored.Filled.VolumeUp, if (s.muted) "Unmute" else "Mute") { a.toggleMute() }
+                    MenuTile(Icons.Default.Link, if (a.link.busy) "Link cable\n(linked)" else "Link cable") { a.link.sheetOpen = true }
                     MenuTile(Icons.Default.Edit, "Edit controls") { a.startEditing() }
                     if (a.cartHardware and NativeCore.HW_TILT != 0) {
                         MenuTile(Icons.Default.ScreenRotation, "Recenter tilt") { a.recenterTilt() }

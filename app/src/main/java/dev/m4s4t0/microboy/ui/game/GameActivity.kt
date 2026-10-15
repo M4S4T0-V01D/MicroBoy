@@ -73,6 +73,8 @@ class GameActivity : ComponentActivity() {
     lateinit var game: Game
         private set
     private var session: EmulatorSession? = null
+    val emulator: EmulatorSession? get() = session
+    val link = LinkController(this)
     private val renderer = GameRenderer()
     private lateinit var glView: GLSurfaceView
     lateinit var controller: TouchControllerView
@@ -213,6 +215,7 @@ class GameActivity : ComponentActivity() {
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 when {
+                    link.sheetOpen -> link.sheetOpen = false
                     editing -> finishEditing()
                     slotMode != null -> slotMode = null
                     menuOpen -> closeMenu()
@@ -227,10 +230,12 @@ class GameActivity : ComponentActivity() {
             }
         }
 
+        link.start()
         val restoring = savedInstanceState != null
         lifecycleScope.launch {
             settings = app.settings.settings.first()
             applySettings()
+            link.restore()
             startSession(restoring)
             app.settings.settings.collect {
                 settings = it
@@ -329,6 +334,7 @@ class GameActivity : ComponentActivity() {
             it.volume = s.volume
         }
         sensors.sunSetting = s.sunLevel
+        link.onSettingsChanged()
         if (s.fastForwardMode == FastForwardMode.HOLD && ffToggled) {
             ffToggled = false
             updateFastForward()
@@ -376,7 +382,15 @@ class GameActivity : ComponentActivity() {
 
     // --------------------------------------------------------------- input
 
+    /** Speed changes, rewind, loading states and reset would desync a link. */
+    private fun blockedByLink(): Boolean {
+        if (!link.busy) return false
+        message = "Not available while linked"
+        return true
+    }
+
     private fun onFastForwardInput(pressed: Boolean, fromPad: Boolean) {
+        if (pressed && blockedByLink()) return
         if (settings.fastForwardMode == FastForwardMode.TOGGLE) {
             if (pressed) ffToggled = !ffToggled
         } else if (fromPad) {
@@ -388,6 +402,7 @@ class GameActivity : ComponentActivity() {
     }
 
     fun toggleFastForward() {
+        if (blockedByLink()) return
         ffToggled = !ffToggled
         updateFastForward()
     }
@@ -442,6 +457,7 @@ class GameActivity : ComponentActivity() {
     }
 
     private fun onRewindInput(pressed: Boolean, fromPad: Boolean) {
+        if (pressed && blockedByLink()) return
         if (fromPad) rewindHeldPad = pressed else rewindHeldTouch = pressed
         updateRewind()
     }
@@ -457,6 +473,7 @@ class GameActivity : ComponentActivity() {
     }
 
     fun toggleSlowMotion() {
+        if (blockedByLink()) return
         slowActive = !slowActive
         session?.slowMotion = slowActive
         controller.slowMotionOn = slowActive
@@ -517,6 +534,7 @@ class GameActivity : ComponentActivity() {
         controller.releaseAll()
         gamepad.reset()
         session?.setUserPaused(true)
+        link.onLocalPaused(true)
         window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
     }
 
@@ -524,6 +542,7 @@ class GameActivity : ComponentActivity() {
         menuOpen = false
         slotMode = null
         session?.setUserPaused(false)
+        link.onLocalPaused(lifecyclePaused || focusLost)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         hideSystemBars()
     }
@@ -553,6 +572,7 @@ class GameActivity : ComponentActivity() {
     }
 
     fun reset() {
+        if (blockedByLink()) return
         session?.post { NativeCore.nativeReset() }
         message = "Game reset"
         closeMenu()
@@ -603,6 +623,7 @@ class GameActivity : ComponentActivity() {
     }
 
     fun loadState(slot: Int) {
+        if (blockedByLink()) return
         val s = session ?: return
         if (!started) return
         val file = storage.stateFile(game.id, slot)
@@ -674,12 +695,14 @@ class GameActivity : ComponentActivity() {
         if (!::glView.isInitialized) return
         runCatching { unregisterReceiver(noisyReceiver) }
         inputManager.unregisterInputDeviceListener(deviceListener)
+        link.shutdown()
         session?.stop()
         session = null
     }
 
     private fun updatePause() {
         session?.setSystemPaused(lifecyclePaused || focusLost)
+        link.onLocalPaused(lifecyclePaused || focusLost || menuOpen)
     }
 
     /** Flushes the cartridge save, writes the auto-save state and records playtime. */

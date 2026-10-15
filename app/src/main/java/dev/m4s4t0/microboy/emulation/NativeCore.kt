@@ -49,6 +49,17 @@ object NativeCore {
     @JvmStatic external fun nativeSetSun(level: Int)
     @JvmStatic external fun nativePollRumble(): Boolean
 
+    // Online link (see jni_bridge.c). Both phones run both consoles.
+    @JvmStatic external fun nativeLinkSnapshot(): ByteArray?
+    @JvmStatic external fun nativeLinkBegin(
+        localRom: ByteArray, localState: ByteArray, peerRom: ByteArray, peerState: ByteArray,
+        localPlayer: Int, epochMs: Long, savePath: String,
+    ): Boolean
+    @JvmStatic external fun nativeLinkRunTick(keysP1: Int, keysP2: Int, audio: Boolean)
+    @JvmStatic external fun nativeLinkChecksum(): Int
+    @JvmStatic external fun nativeLinkEnd()
+    @JvmStatic external fun nativeLinkActive(): Boolean
+
     @JvmStatic external fun nativeSetRewind(enabled: Boolean, entries: Int, interval: Int)
     @JvmStatic external fun nativeRewindStep(): Boolean
     @JvmStatic external fun nativeSetSpeed(speed: Float)

@@ -24,6 +24,7 @@ add_subdirectory(${MGBA_DIR} mgba EXCLUDE_FROM_ALL)
 add_library(microboy SHARED
     jni_bridge.c
     audio.c
+    link.c
 )
 target_include_directories(microboy PRIVATE
     ${MGBA_DIR}/include

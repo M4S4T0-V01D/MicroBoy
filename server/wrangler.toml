@@ -1,0 +1,19 @@
+name = "microboy-link"
+main = "src/index.js"
+compatibility_date = "2026-09-04"
+
+# Matchmaking for MicroBoy's online link cable. One Lobby Durable Object
+# tracks who's online and handles invites; each matched pair gets its own
+# Room Durable Object that relays their messages. Both use WebSocket
+# hibernation, so idle connections cost nothing. See README.md.
+[[durable_objects.bindings]]
+name = "LOBBY"
+class_name = "Lobby"
+
+[[durable_objects.bindings]]
+name = "ROOM"
+class_name = "Room"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["Lobby", "Room"]

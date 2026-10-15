@@ -14,6 +14,7 @@
 #include <mgba/core/serialize.h>
 #include <mgba/gba/core.h>
 #include <mgba/internal/gba/gba.h>
+#include <mgba-util/crc32.h>
 #include <mgba-util/vfs.h>
 
 #include <android/log.h>
@@ -28,6 +29,7 @@
 #include <unistd.h>
 
 #include "audio.h"
+#include "link.h"
 
 #define LOG_TAG "MicroBoyCore"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
@@ -117,6 +119,18 @@ static void setResampleRatio(double ratio) {
     blip_set_rates(core->getAudioChannel(core, 1), core->frequency(core), out);
 }
 
+// Dynamic rate control: nudges the resampling ratio so the device buffer
+// stays near its target fill.
+static void adjustAudioRate(void) {
+    double fill = (double) audio_fill();
+    double target = (double) audio_target_fill();
+    double delta = DRC_MAX_DELTA * (target - fill) / target;
+    if (delta > DRC_MAX_DELTA) delta = DRC_MAX_DELTA;
+    if (delta < -DRC_MAX_DELTA) delta = -DRC_MAX_DELTA;
+    // Quantize so blip_set_rates is not called every single frame.
+    setResampleRatio(1.0 + (double) (int) (delta * 20000.0) / 20000.0);
+}
+
 // Moves every sample the core produced this frame out of the blip buffers,
 // optionally forwarding it to the audio device.
 static void drainAudio(bool output) {
@@ -191,6 +205,23 @@ static void flushSavedata(void) {
     }
 }
 
+// --- online link: a second core for the other player's console --------------
+static struct mCore* peerCore;
+static struct MBLinkCable cable;
+static bool linked;
+static color_t peerBuffer[PIXELS];
+
+static void linkTeardown(void) {
+    if (!linked) {
+        return;
+    }
+    mbLinkDetach(&cable);
+    mCoreConfigDeinit(&peerCore->config);
+    peerCore->deinit(peerCore);
+    peerCore = NULL;
+    linked = false;
+}
+
 static void rewindStop(void) {
     if (rewindOn) {
         mCoreRewindContextDeinit(&rewindCtx);
@@ -213,6 +244,7 @@ static void unloadRom(void) {
         return;
     }
     rewindStop();
+    linkTeardown();
     if (romLoaded) {
         flushSavedata();
         core->unloadROM(core);
@@ -225,46 +257,58 @@ static void unloadRom(void) {
 
 // --- JNI: lifecycle ----------------------------------------------------------
 
-JNIEXPORT jboolean JNICALL JNI(nativeLoadRom)(JNIEnv* env, jclass clazz, jbyteArray rom, jstring savePath, jstring biosPath, jboolean skipBios) {
-    (void) clazz;
-    unloadRom();
-    mLogSetDefaultLogger(&logger);
-
-    core = GBACoreCreate();
-    if (!core || !core->init(core)) {
+// Creates a GBA core with MicroBoy's standard configuration and loads `rom`.
+// Returns NULL if it isn't a GBA ROM.
+static struct mCore* createCore(JNIEnv* env, jbyteArray rom, bool skipBios, bool useBios, color_t* video) {
+    struct mCore* c = GBACoreCreate();
+    if (!c || !c->init(c)) {
         LOGE("Failed to create core");
-        core = NULL;
-        return JNI_FALSE;
+        return NULL;
     }
-    mCoreInitConfig(core, NULL);
-    core->opts.skipBios = skipBios;
-    core->opts.useBios = biosPath != NULL;
+    mCoreInitConfig(c, NULL);
+    c->opts.skipBios = skipBios;
+    c->opts.useBios = useBios;
     // GBACoreCreate zeroes opts, and loading the config copies opts.volume into
     // the core's master volume, so it must be set or the game is silent.
     // Output volume is applied separately in audio.c.
-    core->opts.volume = GBA_AUDIO_VOLUME_MAX;
-    mCoreLoadConfig(core);
-
-    core->setPeripheral(core, mPERIPH_ROTATION, &rotation);
-    core->setPeripheral(core, mPERIPH_RUMBLE, &rumble);
-    core->setPeripheral(core, mPERIPH_GBA_LUMINANCE, &luminance);
-    atomic_store(&rumbleSeen, false);
-
-    core->setVideoBuffer(core, backBuffer, WIDTH);
-    core->setAudioBufferSize(core, 2048);
-    lastRatio = 0;
-    setResampleRatio(1.0);
+    c->opts.volume = GBA_AUDIO_VOLUME_MAX;
+    mCoreLoadConfig(c);
+    c->setVideoBuffer(c, video, WIDTH);
+    c->setAudioBufferSize(c, 2048);
 
     jsize len = (*env)->GetArrayLength(env, rom);
     jbyte* bytes = (*env)->GetByteArrayElements(env, rom, NULL);
     struct VFile* romVf = VFileMemChunk(bytes, (size_t) len);
     (*env)->ReleaseByteArrayElements(env, rom, bytes, JNI_ABORT);
-    if (!romVf || !core->isROM(romVf) || !core->loadROM(core, romVf)) {
+    if (!romVf || !c->isROM(romVf) || !c->loadROM(c, romVf)) {
         LOGE("Not a valid GBA ROM");
         if (romVf) romVf->close(romVf);
-        unloadRom();
+        mCoreConfigDeinit(&c->config);
+        c->deinit(c);
+        return NULL;
+    }
+    return c;
+}
+
+static void attachSensors(struct mCore* c, bool on) {
+    c->setPeripheral(c, mPERIPH_ROTATION, on ? &rotation : NULL);
+    c->setPeripheral(c, mPERIPH_GBA_LUMINANCE, on ? &luminance : NULL);
+}
+
+JNIEXPORT jboolean JNICALL JNI(nativeLoadRom)(JNIEnv* env, jclass clazz, jbyteArray rom, jstring savePath, jstring biosPath, jboolean skipBios) {
+    (void) clazz;
+    unloadRom();
+    mLogSetDefaultLogger(&logger);
+
+    core = createCore(env, rom, skipBios, biosPath != NULL, backBuffer);
+    if (!core) {
         return JNI_FALSE;
     }
+    attachSensors(core, true);
+    core->setPeripheral(core, mPERIPH_RUMBLE, &rumble);
+    atomic_store(&rumbleSeen, false);
+    lastRatio = 0;
+    setResampleRatio(1.0);
     romLoaded = true;
 
     const char* sp = (*env)->GetStringUTFChars(env, savePath, NULL);
@@ -331,7 +375,7 @@ JNIEXPORT jstring JNICALL JNI(nativeGameCode)(JNIEnv* env, jclass clazz) {
 JNIEXPORT void JNICALL JNI(nativeRunFrames)(JNIEnv* env, jclass clazz, jint count, jint keys, jboolean audio) {
     (void) env;
     (void) clazz;
-    if (!core || !romLoaded) {
+    if (!core || !romLoaded || linked) {
         return;
     }
     audio_service();
@@ -345,13 +389,7 @@ JNIEXPORT void JNICALL JNI(nativeRunFrames)(JNIEnv* env, jclass clazz, jint coun
         }
     }
     if (audio && count == 1) {
-        double fill = (double) audio_fill();
-        double target = (double) audio_target_fill();
-        double delta = DRC_MAX_DELTA * (target - fill) / target;
-        if (delta > DRC_MAX_DELTA) delta = DRC_MAX_DELTA;
-        if (delta < -DRC_MAX_DELTA) delta = -DRC_MAX_DELTA;
-        // Quantize so blip_set_rates is not called every single frame.
-        setResampleRatio(1.0 + (double) (int) (delta * 20000.0) / 20000.0);
+        adjustAudioRate();
     }
     publishFrame();
 }
@@ -444,6 +482,148 @@ JNIEXPORT jboolean JNICALL JNI(nativeLoadState)(JNIEnv* env, jclass clazz, jstri
         publishFrame();
     }
     return ok;
+}
+
+// --- JNI: online link -------------------------------------------------------------
+// Both phones run both consoles. Each console starts from its owner's
+// snapshot, and afterwards only button presses are exchanged, so everything
+// that affects emulation must be identical on both phones: HLE BIOS, a fake
+// clock derived from the agreed epoch, and no sensors.
+
+static jbyteArray stateBytes(JNIEnv* env, struct mCore* c, int flags) {
+    struct VFile* vf = VFileMemChunk(NULL, 0);
+    mCoreSaveStateNamed(c, vf, flags);
+    size_t size = (size_t) vf->size(vf);
+    void* data = vf->map(vf, size, MAP_READ);
+    jbyteArray out = (*env)->NewByteArray(env, (jsize) size);
+    (*env)->SetByteArrayRegion(env, out, 0, (jsize) size, data);
+    vf->unmap(vf, data, size);
+    vf->close(vf);
+    return out;
+}
+
+static bool loadStateBytes(JNIEnv* env, struct mCore* c, jbyteArray state) {
+    jsize len = (*env)->GetArrayLength(env, state);
+    jbyte* bytes = (*env)->GetByteArrayElements(env, state, NULL);
+    struct VFile* vf = VFileMemChunk(bytes, (size_t) len);
+    (*env)->ReleaseByteArrayElements(env, state, bytes, JNI_ABORT);
+    bool ok = mCoreLoadStateNamed(c, vf, SAVESTATE_SAVEDATA | SAVESTATE_RTC);
+    vf->close(vf);
+    return ok;
+}
+
+// This console's state, including its cartridge save, to send to the peer.
+JNIEXPORT jbyteArray JNICALL JNI(nativeLinkSnapshot)(JNIEnv* env, jclass clazz) {
+    (void) clazz;
+    if (!core || !romLoaded) {
+        return NULL;
+    }
+    return stateBytes(env, core, SAVESTATE_SAVEDATA | SAVESTATE_RTC);
+}
+
+// Rebuilds both consoles from the two snapshots and connects the cable.
+// The local console keeps writing its real save file; the peer's lives in memory.
+JNIEXPORT jboolean JNICALL JNI(nativeLinkBegin)(JNIEnv* env, jclass clazz, jbyteArray localRom, jbyteArray localState,
+                                                jbyteArray peerRom, jbyteArray peerState, jint localPlayer,
+                                                jlong epochMs, jstring savePath) {
+    (void) clazz;
+    unloadRom();
+    core = createCore(env, localRom, true, false, backBuffer);
+    peerCore = core ? createCore(env, peerRom, true, false, peerBuffer) : NULL;
+    if (!core || !peerCore) {
+        if (core) { mCoreConfigDeinit(&core->config); core->deinit(core); core = NULL; }
+        return JNI_FALSE;
+    }
+    const char* sp = (*env)->GetStringUTFChars(env, savePath, NULL);
+    core->loadSave(core, VFileOpen(sp, O_CREAT | O_RDWR));
+    (*env)->ReleaseStringUTFChars(env, savePath, sp);
+    peerCore->loadSave(peerCore, VFileMemChunk(NULL, 0));
+    core->setPeripheral(core, mPERIPH_RUMBLE, &rumble);  // output only, safe
+    core->reset(core);
+    peerCore->reset(peerCore);
+    romLoaded = true;
+    bool localOk = loadStateBytes(env, core, localState);
+    if (!localOk || !loadStateBytes(env, peerCore, peerState)) {
+        // Carry on alone from this console's snapshot.
+        LOGE("Link: %s snapshot was rejected", localOk ? "the peer's" : "our");
+        mCoreConfigDeinit(&peerCore->config);
+        peerCore->deinit(peerCore);
+        peerCore = NULL;
+        attachSensors(core, true);
+        publishFrame();
+        return JNI_FALSE;
+    }
+    struct mCore* both[2] = { core, peerCore };
+    for (int i = 0; i < 2; ++i) {
+        both[i]->rtc.override = RTC_FAKE_EPOCH;
+        both[i]->rtc.value = epochMs;
+    }
+    mbLinkAttach(&cable, localPlayer == 0 ? core : peerCore, localPlayer == 0 ? peerCore : core);
+    linked = true;
+    lastRatio = 0;
+    setResampleRatio(1.0);
+    publishFrame();
+    return JNI_TRUE;
+}
+
+// Runs one linked frame with both players' buttons.
+JNIEXPORT void JNICALL JNI(nativeLinkRunTick)(JNIEnv* env, jclass clazz, jint keysP1, jint keysP2, jboolean audio) {
+    (void) env;
+    (void) clazz;
+    if (!linked) {
+        return;
+    }
+    audio_service();
+    cable.cores[0]->setKeys(cable.cores[0], (uint32_t) keysP1);
+    cable.cores[1]->setKeys(cable.cores[1], (uint32_t) keysP2);
+    mbLinkRunTick(&cable);
+    drainAudio(audio);
+    blip_clear(peerCore->getAudioChannel(peerCore, 0));
+    blip_clear(peerCore->getAudioChannel(peerCore, 1));
+    if (audio) {
+        adjustAudioRate();
+    }
+    publishFrame();
+}
+
+// Checksum of both consoles, player 1 first, for detecting desyncs.
+JNIEXPORT jint JNICALL JNI(nativeLinkChecksum)(JNIEnv* env, jclass clazz) {
+    (void) env;
+    (void) clazz;
+    if (!linked) {
+        return 0;
+    }
+    uint32_t crc = 0;
+    for (int i = 0; i < 2; ++i) {
+        struct VFile* vf = VFileMemChunk(NULL, 0);
+        mCoreSaveStateNamed(cable.cores[i], vf, 0);
+        size_t size = (size_t) vf->size(vf);
+        void* data = vf->map(vf, size, MAP_READ);
+        crc = crc * 31 + doCrc32(data, size);
+        vf->unmap(vf, data, size);
+        vf->close(vf);
+    }
+    return (jint) crc;
+}
+
+// Unplugs the cable and drops the peer's console; this console keeps
+// running from exactly where the link left it, with the real clock again.
+JNIEXPORT void JNICALL JNI(nativeLinkEnd)(JNIEnv* env, jclass clazz) {
+    (void) env;
+    (void) clazz;
+    if (!linked) {
+        return;
+    }
+    linkTeardown();
+    core->rtc.override = RTC_NO_OVERRIDE;
+    attachSensors(core, true);
+    flushSavedata();
+}
+
+JNIEXPORT jboolean JNICALL JNI(nativeLinkActive)(JNIEnv* env, jclass clazz) {
+    (void) env;
+    (void) clazz;
+    return linked;
 }
 
 // --- JNI: peripherals ----------------------------------------------------------

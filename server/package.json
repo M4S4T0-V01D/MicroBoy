@@ -1,0 +1,15 @@
+{
+  "name": "microboy-link",
+  "private": true,
+  "description": "Matchmaking and relay server for MicroBoy's online link cable (Cloudflare Workers + Durable Objects).",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "test": "node test/smoke.mjs",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}

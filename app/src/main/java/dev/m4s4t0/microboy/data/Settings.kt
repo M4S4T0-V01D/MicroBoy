@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import dev.m4s4t0.microboy.input.ControlLayout
 import dev.m4s4t0.microboy.input.GamepadMapping
@@ -71,6 +72,13 @@ data class AppSettings(
     val customTheme: ThemeSeeds = Palettes.defaultCustom,
     val downloadBoxArt: Boolean = false,
     val importRoms: Boolean = false,
+    // Online link: the nickname other players see, whether to appear in the
+    // lobby and show the current game, and players blocked by their lobby id.
+    val linkNick: String = "",
+    val linkOnline: Boolean = false,
+    val linkVisible: Boolean = true,
+    val linkShareGame: Boolean = true,
+    val linkBlocked: Set<String> = emptySet(),
 )
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
@@ -115,6 +123,11 @@ class SettingsRepository(private val context: Context) {
         val customTheme = stringPreferencesKey("custom_theme")
         val boxArt = booleanPreferencesKey("download_box_art")
         val importRoms = booleanPreferencesKey("import_roms")
+        val linkNick = stringPreferencesKey("link_nick")
+        val linkOnline = booleanPreferencesKey("link_online")
+        val linkVisible = booleanPreferencesKey("link_visible")
+        val linkShareGame = booleanPreferencesKey("link_share_game")
+        val linkBlocked = stringSetPreferencesKey("link_blocked")
     }
 
     val settings: Flow<AppSettings> = context.dataStore.data.map(::fromPrefs)
@@ -158,6 +171,11 @@ class SettingsRepository(private val context: Context) {
             customTheme = p[K.customTheme]?.let { runCatching { json.decodeFromString(ThemeSeeds.serializer(), it) }.getOrNull() } ?: d.customTheme,
             downloadBoxArt = p[K.boxArt] ?: d.downloadBoxArt,
             importRoms = p[K.importRoms] ?: d.importRoms,
+            linkNick = p[K.linkNick] ?: d.linkNick,
+            linkOnline = p[K.linkOnline] ?: d.linkOnline,
+            linkVisible = p[K.linkVisible] ?: d.linkVisible,
+            linkShareGame = p[K.linkShareGame] ?: d.linkShareGame,
+            linkBlocked = p[K.linkBlocked] ?: d.linkBlocked,
         )
     }
 
@@ -201,6 +219,11 @@ class SettingsRepository(private val context: Context) {
             p[K.customTheme] = json.encodeToString(ThemeSeeds.serializer(), s.customTheme)
             p[K.boxArt] = s.downloadBoxArt
             p[K.importRoms] = s.importRoms
+            p[K.linkNick] = s.linkNick
+            p[K.linkOnline] = s.linkOnline
+            p[K.linkVisible] = s.linkVisible
+            p[K.linkShareGame] = s.linkShareGame
+            p[K.linkBlocked] = s.linkBlocked
         }
     }
 

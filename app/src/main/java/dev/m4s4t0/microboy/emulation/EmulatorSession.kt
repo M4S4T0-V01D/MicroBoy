@@ -3,6 +3,7 @@ package dev.m4s4t0.microboy.emulation
 import android.os.Process
 import android.os.SystemClock
 import android.util.Log
+import dev.m4s4t0.microboy.link.LinkDriver
 import kotlinx.coroutines.suspendCancellableCoroutine
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicInteger
@@ -38,9 +39,13 @@ data class EmuStats(
  *
  * Rewind: while held, each period steps one snapshot back. Snapshots are
  * recorded natively every [REWIND_INTERVAL] emulated frames.
+ *
+ * Online link: while [link] is set, frames are run by the link driver with
+ * both players' buttons; fast-forward, slow motion and rewind are ignored
+ * because both phones must run exactly the same frames.
  */
 class EmulatorSession(
-    private val rom: ByteArray,
+    val rom: ByteArray,
     private val savePath: String,
     private val biosPath: String?,
     private val skipBios: Boolean,
@@ -64,6 +69,15 @@ class EmulatorSession(
             field = value
             post(::applyRewind)
         }
+    /** Set while an online link is running; see [LinkDriver]. */
+    @Volatile var link: LinkDriver? = null
+    /** Holds emulation still (but keeps running commands) while a link is being set up. */
+    @Volatile var linkHold = false
+        set(value) {
+            field = value
+            wake()
+        }
+
     /** Receives rumble motor changes on the emulation thread; null = ignore rumble. */
     @Volatile var onRumble: ((Boolean) -> Unit)? = null
     @Volatile var audioEnabled = true
@@ -83,7 +97,7 @@ class EmulatorSession(
     @Volatile var playedMs = 0L
         private set
 
-    val isPaused: Boolean get() = userPaused || systemPaused
+    val isPaused: Boolean get() = userPaused || systemPaused || linkHold
 
     fun start() {
         thread = Thread(::run, "Emulation").also { it.start() }
@@ -139,6 +153,12 @@ class EmulatorSession(
                 Log.e(TAG, "Command failed", e)
             }
         }
+    }
+
+    /** Called on the emulation thread after a link ends: restores solo-only features. */
+    fun relinkFinished() {
+        applyRewind()
+        NativeCore.nativeSetSpeed(1f)
     }
 
     private fun applyRewind() {
@@ -215,7 +235,9 @@ class EmulatorSession(
             }
 
             val keys = touchKeys.get() or padKeys.get()
+            val linkDriver = link
             val mode = when {
+                linkDriver != null -> Mode.LINK
                 rewinding && rewindSeconds > 0 -> Mode.REWIND
                 fastForward -> Mode.FAST
                 slowMotion -> Mode.SLOW
@@ -230,7 +252,9 @@ class EmulatorSession(
 
             val t0 = System.nanoTime()
             var frames: Int
-            if (mode == Mode.REWIND) {
+            if (mode == Mode.LINK && linkDriver != null) {
+                frames = linkDriver.step(keys, audioOpen && !muted)
+            } else if (mode == Mode.REWIND) {
                 // When the history runs out the picture simply holds.
                 NativeCore.nativeRewindStep()
                 frames = 1
@@ -302,7 +326,7 @@ class EmulatorSession(
         NativeCore.nativeUnload()
     }
 
-    private enum class Mode { NORMAL, FAST, SLOW, REWIND }
+    private enum class Mode { NORMAL, FAST, SLOW, REWIND, LINK }
 
     companion object {
         private const val TAG = "EmulatorSession"

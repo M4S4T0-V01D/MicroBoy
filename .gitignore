@@ -18,3 +18,4 @@ gba_bios.bin
 # the demo ROM is published on the website
 !docs/*.gba
 testroms/microboy-demo/scene.h
+__pycache__/

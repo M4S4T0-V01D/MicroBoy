@@ -10,6 +10,7 @@
 #include <mgba/core/blip_buf.h>
 #include <mgba/core/core.h>
 #include <mgba/core/log.h>
+#include <mgba/core/rewind.h>
 #include <mgba/core/serialize.h>
 #include <mgba/gba/core.h>
 #include <mgba/internal/gba/gba.h>
@@ -21,6 +22,7 @@
 #include <jni.h>
 #include <pthread.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
@@ -52,6 +54,17 @@ static uint32_t copiedSeq;
 
 static int16_t audioScratch[2048 * 2];
 static double lastRatio;
+// Output samples per emulated sample beyond the device rate: 1 / game speed.
+// Slow motion stretches the audio instead of starving the device.
+static double audioStretch = 1.0;
+
+// Rewind history: a snapshot every `rewindInterval` emulated frames, kept as
+// diffs by mGBA's rewind context.
+static struct mCoreRewindContext rewindCtx;
+static bool rewindOn;
+static int rewindInterval = 2;
+static int rewindCountdown;
+static size_t rewindEntries;
 
 // --- logging ---------------------------------------------------------------
 
@@ -75,7 +88,7 @@ static void setResampleRatio(double ratio) {
         return;
     }
     lastRatio = ratio;
-    double out = audio_sample_rate() * ratio;
+    double out = audio_sample_rate() * ratio * audioStretch;
     blip_set_rates(core->getAudioChannel(core, 0), core->frequency(core), out);
     blip_set_rates(core->getAudioChannel(core, 1), core->frequency(core), out);
 }
@@ -154,10 +167,28 @@ static void flushSavedata(void) {
     }
 }
 
+static void rewindStop(void) {
+    if (rewindOn) {
+        mCoreRewindContextDeinit(&rewindCtx);
+        rewindOn = false;
+    }
+}
+
+// Forgets the rewind history, so rewinding can't cross a reset or a loaded
+// save state (e.g. back to the boot screen right after resuming).
+static void rewindClear(void) {
+    if (rewindOn) {
+        mCoreRewindContextDeinit(&rewindCtx);
+        mCoreRewindContextInit(&rewindCtx, rewindEntries, false);
+        rewindCountdown = rewindInterval;
+    }
+}
+
 static void unloadRom(void) {
     if (!core) {
         return;
     }
+    rewindStop();
     if (romLoaded) {
         flushSavedata();
         core->unloadROM(core);
@@ -241,6 +272,7 @@ JNIEXPORT void JNICALL JNI(nativeReset)(JNIEnv* env, jclass clazz) {
     (void) clazz;
     if (core && romLoaded) {
         core->reset(core);
+        rewindClear();
     }
 }
 
@@ -278,6 +310,10 @@ JNIEXPORT void JNICALL JNI(nativeRunFrames)(JNIEnv* env, jclass clazz, jint coun
     for (jint i = 0; i < count; ++i) {
         core->runFrame(core);
         drainAudio(audio && count == 1);
+        if (rewindOn && --rewindCountdown <= 0) {
+            mCoreRewindAppend(&rewindCtx, core);
+            rewindCountdown = rewindInterval;
+        }
     }
     if (audio && count == 1) {
         double fill = (double) audio_fill();
@@ -375,9 +411,64 @@ JNIEXPORT jboolean JNICALL JNI(nativeLoadState)(JNIEnv* env, jclass clazz, jstri
     }
     backup->close(backup);
     if (ok) {
+        rewindClear();
         publishFrame();
     }
     return ok;
+}
+
+// --- JNI: rewind and speed --------------------------------------------------
+
+// (Re)configures rewind. Changing the size or interval discards the history.
+JNIEXPORT void JNICALL JNI(nativeSetRewind)(JNIEnv* env, jclass clazz, jboolean enabled, jint entries, jint interval) {
+    (void) env;
+    (void) clazz;
+    rewindStop();
+    if (!enabled || entries <= 0 || !core || !romLoaded) {
+        return;
+    }
+    rewindEntries = (size_t) entries;
+    mCoreRewindContextInit(&rewindCtx, rewindEntries, false);
+    rewindInterval = interval > 0 ? interval : 1;
+    rewindCountdown = rewindInterval;
+    rewindOn = true;
+}
+
+// Steps one snapshot back and shows it. Returns false when the history is
+// used up. Like loading a save state, rewinding never undoes the in-game save:
+// mGBA's snapshots include the cartridge save, so the current one is put back.
+JNIEXPORT jboolean JNICALL JNI(nativeRewindStep)(JNIEnv* env, jclass clazz) {
+    (void) env;
+    (void) clazz;
+    if (!core || !romLoaded || !rewindOn) {
+        return JNI_FALSE;
+    }
+    void* sram = NULL;
+    size_t size = core->savedataClone(core, &sram);
+    bool ok = mCoreRewindRestore(&rewindCtx, core);
+    if (ok) {
+        if (size) {
+            core->savedataRestore(core, sram, size, true);
+        }
+        // A restored state has no picture yet; one frame renders it.
+        core->runFrame(core);
+        drainAudio(false);
+        rewindCountdown = rewindInterval;
+        publishFrame();
+    }
+    free(sram);
+    return ok;
+}
+
+// Game speed for slow motion (1 = normal). Audio is resampled to match.
+JNIEXPORT void JNICALL JNI(nativeSetSpeed)(JNIEnv* env, jclass clazz, jfloat speed) {
+    (void) env;
+    (void) clazz;
+    audioStretch = speed > 0 ? 1.0 / speed : 1.0;
+    if (core) {
+        lastRatio = 0;
+        setResampleRatio(1.0);
+    }
 }
 
 // --- JNI: audio ------------------------------------------------------------

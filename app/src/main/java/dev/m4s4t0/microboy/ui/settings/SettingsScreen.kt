@@ -68,6 +68,8 @@ import dev.m4s4t0.microboy.input.GamepadMapping
 import dev.m4s4t0.microboy.input.PadAction
 import dev.m4s4t0.microboy.ui.game.FF_SPEEDS
 import dev.m4s4t0.microboy.ui.game.ffLabel
+import dev.m4s4t0.microboy.ui.game.SLOW_SPEEDS
+import dev.m4s4t0.microboy.ui.game.slowLabel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -165,18 +167,30 @@ private fun <T> ChoiceRow(title: String, options: List<T>, selected: T, label: (
 private fun pct(v: Float) = "${(v * 100).toInt()}%"
 
 private fun LazyListScope.fastForwardSection(s: AppSettings, set: Setter) {
-    header("Fast-forward")
+    header("Speed")
     item {
-        ChoiceRow("Speed", FF_SPEEDS, s.fastForwardSpeed, ::ffLabel, "Emulation really runs this many times faster; “Max” runs as fast as the device allows. Audio is muted while fast-forwarding.") {
+        ChoiceRow("Fast-forward speed", FF_SPEEDS, s.fastForwardSpeed, ::ffLabel, "Emulation really runs this many times faster; “Max” runs as fast as the device allows. Audio is muted while fast-forwarding.") {
             set { copy(fastForwardSpeed = it) }
         }
     }
     item {
-        ChoiceRow("Activation", FastForwardMode.entries, s.fastForwardMode, { if (it == FastForwardMode.HOLD) "Hold button" else "Tap to toggle" }) {
+        ChoiceRow("Fast-forward button", FastForwardMode.entries, s.fastForwardMode, { if (it == FastForwardMode.HOLD) "Hold" else "Tap to toggle" }) {
             set { copy(fastForwardMode = it) }
         }
     }
+    item {
+        ChoiceRow("Slow motion speed", SLOW_SPEEDS, s.slowMotionSpeed, ::slowLabel, "Turn slow motion on from the pause menu, a controller button, or the ½× touch button (show it in Edit controls). Audio slows down with the game.") {
+            set { copy(slowMotionSpeed = it) }
+        }
+    }
+    item {
+        ChoiceRow("Rewind", REWIND_CHOICES, s.rewindSeconds, { if (it == 0) "Off" else "$it s" }, "Hold ◀◀ to go back in time. Longer history uses more memory. Rewinding never undoes your in-game save.") {
+            set { copy(rewindSeconds = it) }
+        }
+    }
 }
+
+private val REWIND_CHOICES = listOf(0, 10, 20, 30, 60)
 
 private fun LazyListScope.displaySection(s: AppSettings, set: Setter) {
     header("Display")

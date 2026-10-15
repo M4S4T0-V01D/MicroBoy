@@ -91,6 +91,10 @@ class GameActivity : ComponentActivity() {
         private set
     var ffActive by mutableStateOf(false)
         private set
+    var rewindActive by mutableStateOf(false)
+        private set
+    var slowActive by mutableStateOf(false)
+        private set
     var gamepadConnected by mutableStateOf(false)
         private set
     var stats by mutableStateOf(EmuStats())
@@ -109,6 +113,8 @@ class GameActivity : ComponentActivity() {
     private var ffToggled = false
     private var ffHeldTouch = false
     private var ffHeldPad = false
+    private var rewindHeldTouch = false
+    private var rewindHeldPad = false
 
     // Pause sources other than the menu
     private var lifecyclePaused = false
@@ -167,6 +173,8 @@ class GameActivity : ComponentActivity() {
                 }
 
                 override fun onFastForward(pressed: Boolean) = onFastForwardInput(pressed, fromPad = false)
+                override fun onRewind(pressed: Boolean) = onRewindInput(pressed, fromPad = false)
+                override fun onSlowMotion() = toggleSlowMotion()
                 override fun onMenu() = openMenu()
                 override fun onLayoutEdited(layout: ControlLayout) {
                     layoutVersion++
@@ -180,6 +188,7 @@ class GameActivity : ComponentActivity() {
         gamepad = GamepadInput(
             onKeys = { session?.setPadKeys(it) },
             onFastForward = { onFastForwardInput(it, fromPad = true) },
+            onRewind = { onRewindInput(it, fromPad = true) },
             onAction = ::onPadAction,
         )
         gamepadConnected = GamepadInput.anyControllerConnected(inputManager)
@@ -292,6 +301,8 @@ class GameActivity : ComponentActivity() {
         gamepad.mapping = s.gamepadMapping
         session?.let {
             it.fastForwardSpeed = s.fastForwardSpeed
+            it.slowSpeed = s.slowMotionSpeed
+            it.rewindSeconds = s.rewindSeconds
             it.audioEnabled = s.audioEnabled
             it.muted = s.muted
             it.volume = s.volume
@@ -365,8 +376,34 @@ class GameActivity : ComponentActivity() {
         ffActive = active
     }
 
+    private fun onRewindInput(pressed: Boolean, fromPad: Boolean) {
+        if (fromPad) rewindHeldPad = pressed else rewindHeldTouch = pressed
+        updateRewind()
+    }
+
+    private fun updateRewind() {
+        val held = rewindHeldTouch || rewindHeldPad
+        if (held && settings.rewindSeconds == 0) {
+            message = "Rewind is off. Turn it on in Settings → Speed"
+            return
+        }
+        session?.rewinding = held
+        rewindActive = held
+    }
+
+    fun toggleSlowMotion() {
+        slowActive = !slowActive
+        session?.slowMotion = slowActive
+        controller.slowMotionOn = slowActive
+    }
+
+    fun setSlowMotionSpeed(speed: Float) {
+        lifecycleScope.launch { app.settings.update { it.copy(slowMotionSpeed = speed) } }
+    }
+
     private fun onPadAction(action: PadAction) {
         when (action) {
+            PadAction.SLOW_MOTION -> toggleSlowMotion()
             PadAction.MENU -> if (menuOpen) closeMenu() else openMenu()
             PadAction.QUICK_SAVE -> saveState(settings.defaultSlot)
             PadAction.QUICK_LOAD -> loadState(settings.defaultSlot)
@@ -556,6 +593,9 @@ class GameActivity : ComponentActivity() {
         ffHeldPad = false
         ffHeldTouch = false
         updateFastForward()
+        rewindHeldPad = false
+        rewindHeldTouch = false
+        updateRewind()
         persistSession()
         abandonFocus()
         glView.onPause()

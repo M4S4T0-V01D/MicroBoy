@@ -32,6 +32,12 @@ data class EmuStats(
  * Fast-forward: N frames are genuinely emulated per period (or as many as fit
  * in the period for "max"); only the last one is displayed and the audio
  * produced while fast-forwarding is discarded to avoid distortion.
+ *
+ * Slow motion: one frame per stretched period, with the audio resampled to the
+ * same speed (it plays slower and lower, like tape).
+ *
+ * Rewind: while held, each period steps one snapshot back. Snapshots are
+ * recorded natively every [REWIND_INTERVAL] emulated frames.
  */
 class EmulatorSession(
     private val rom: ByteArray,
@@ -47,6 +53,17 @@ class EmulatorSession(
     @Volatile var fastForward = false
     /** Frames per period while fast-forwarding; 0 = unthrottled. */
     @Volatile var fastForwardSpeed = 3
+    @Volatile var slowMotion = false
+    /** Game speed while slow motion is on, e.g. 0.5. */
+    @Volatile var slowSpeed = 0.5f
+    @Volatile var rewinding = false
+    /** Seconds of rewind history; 0 turns recording off. */
+    @Volatile var rewindSeconds = 0
+        set(value) {
+            if (field == value) return
+            field = value
+            post(::applyRewind)
+        }
     @Volatile var audioEnabled = true
     @Volatile var muted = false
     @Volatile var volume = 1f
@@ -122,6 +139,11 @@ class EmulatorSession(
         }
     }
 
+    private fun applyRewind() {
+        val entries = (rewindSeconds * NativeCore.FRAME_RATE / REWIND_INTERVAL).toInt()
+        NativeCore.nativeSetRewind(entries > 0, entries, REWIND_INTERVAL)
+    }
+
     private fun run() {
         Process.setThreadPriority(Process.THREAD_PRIORITY_URGENT_DISPLAY)
         val ok = NativeCore.nativeLoadRom(rom, savePath, biosPath, skipBios)
@@ -130,12 +152,13 @@ class EmulatorSession(
             drainCommands()
             return
         }
+        applyRewind()
 
         val period = (1_000_000_000.0 / NativeCore.FRAME_RATE).toLong()
         var next = System.nanoTime()
         var audioOpen = false
         var audioPaused = false
-        var wasFastForward = false
+        var lastMode = Mode.NORMAL
         var appliedVolume = -1f
 
         var statFrames = 0
@@ -185,15 +208,26 @@ class EmulatorSession(
             }
 
             val keys = touchKeys.get() or padKeys.get()
-            val ff = fastForward
-            if (ff != wasFastForward) {
+            val mode = when {
+                rewinding && rewindSeconds > 0 -> Mode.REWIND
+                fastForward -> Mode.FAST
+                slowMotion -> Mode.SLOW
+                else -> Mode.NORMAL
+            }
+            val slow = slowSpeed
+            if (mode != lastMode) {
+                NativeCore.nativeSetSpeed(if (mode == Mode.SLOW) slow else 1f)
                 NativeCore.nativeAudioFlush()
-                wasFastForward = ff
+                lastMode = mode
             }
 
             val t0 = System.nanoTime()
             var frames: Int
-            if (!ff) {
+            if (mode == Mode.REWIND) {
+                // When the history runs out the picture simply holds.
+                NativeCore.nativeRewindStep()
+                frames = 1
+            } else if (mode != Mode.FAST) {
                 NativeCore.nativeRunFrames(1, keys, audioOpen && !muted)
                 frames = 1
             } else {
@@ -238,7 +272,7 @@ class EmulatorSession(
             }
 
             // Pace to real time (unthrottled fast-forward already consumed its period).
-            next += period
+            next += if (mode == Mode.SLOW) (period / slow).toLong() else period
             val now = System.nanoTime()
             if (now - next > period * 4) {
                 next = now // fell far behind (e.g. debugger, heavy load): don't burst to catch up
@@ -253,7 +287,11 @@ class EmulatorSession(
         NativeCore.nativeUnload()
     }
 
+    private enum class Mode { NORMAL, FAST, SLOW, REWIND }
+
     companion object {
         private const val TAG = "EmulatorSession"
+        /** Emulated frames between rewind snapshots (~30 per second). */
+        const val REWIND_INTERVAL = 2
     }
 }

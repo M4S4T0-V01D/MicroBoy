@@ -8,11 +8,12 @@ import dev.m4s4t0.microboy.emulation.GbaKey
 
 /**
  * Translates physical controller events into a GBA key mask plus emulator
- * actions (fast-forward, menu, quick save/load) using a [GamepadMapping].
+ * actions (fast-forward, rewind, menu, quick save/load, ...) using a [GamepadMapping].
  */
 class GamepadInput(
     private val onKeys: (Int) -> Unit,
     private val onFastForward: (Boolean) -> Unit,
+    private val onRewind: (Boolean) -> Unit,
     private val onAction: (PadAction) -> Unit,
 ) {
     var mapping: GamepadMapping = GamepadMapping.default()
@@ -21,6 +22,8 @@ class GamepadInput(
     private var axisMask = 0
     private var ffFromButton = false
     private var ffFromTrigger = false
+    private var rewindFromButton = false
+    private var rewindFromTrigger = false
 
     /** Returns true if the event was consumed. */
     fun onKey(event: KeyEvent): Boolean {
@@ -39,6 +42,10 @@ class GamepadInput(
             action == PadAction.FAST_FORWARD -> {
                 ffFromButton = down
                 onFastForward(ffFromButton || ffFromTrigger)
+            }
+            action == PadAction.REWIND -> {
+                rewindFromButton = down
+                onRewind(rewindFromButton || rewindFromTrigger)
             }
             down && event.repeatCount == 0 -> onAction(action)
         }
@@ -63,13 +70,22 @@ class GamepadInput(
             publish()
         }
 
-        // Analog right trigger acts as hold-to-fast-forward when R2 is bound to it.
+        // Analog triggers act as hold-to-fast-forward / hold-to-rewind when
+        // R2 / L2 are bound to those actions.
         if (mapping.actionFor(KeyEvent.KEYCODE_BUTTON_R2) == PadAction.FAST_FORWARD) {
             val rt = maxOf(event.getAxisValue(MotionEvent.AXIS_RTRIGGER), event.getAxisValue(MotionEvent.AXIS_GAS))
             val pressed = rt > 0.5f
             if (pressed != ffFromTrigger) {
                 ffFromTrigger = pressed
                 onFastForward(ffFromButton || ffFromTrigger)
+            }
+        }
+        if (mapping.actionFor(KeyEvent.KEYCODE_BUTTON_L2) == PadAction.REWIND) {
+            val lt = maxOf(event.getAxisValue(MotionEvent.AXIS_LTRIGGER), event.getAxisValue(MotionEvent.AXIS_BRAKE))
+            val pressed = lt > 0.5f
+            if (pressed != rewindFromTrigger) {
+                rewindFromTrigger = pressed
+                onRewind(rewindFromButton || rewindFromTrigger)
             }
         }
         return true
@@ -80,6 +96,9 @@ class GamepadInput(
         axisMask = 0
         ffFromButton = false
         ffFromTrigger = false
+        if (rewindFromButton || rewindFromTrigger) onRewind(false)
+        rewindFromButton = false
+        rewindFromTrigger = false
         publish()
     }
 

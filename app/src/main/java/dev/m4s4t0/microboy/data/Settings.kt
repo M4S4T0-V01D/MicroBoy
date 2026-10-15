@@ -27,6 +27,9 @@ data class AppSettings(
     // Fast-forward. 0 means "as fast as possible".
     val fastForwardSpeed: Int = 3,
     val fastForwardMode: FastForwardMode = FastForwardMode.HOLD,
+    // Slow motion speed (0.5 = half speed) and seconds of rewind history (0 = off).
+    val slowMotionSpeed: Float = 0.5f,
+    val rewindSeconds: Int = 20,
     // Display
     val scaleMode: ScaleMode = ScaleMode.FIT,
     val screenSize: Float = 1.0f,
@@ -74,6 +77,8 @@ class SettingsRepository(private val context: Context) {
     private object K {
         val ffSpeed = intPreferencesKey("ff_speed")
         val ffMode = stringPreferencesKey("ff_mode")
+        val slowSpeed = floatPreferencesKey("slow_speed")
+        val rewindSeconds = intPreferencesKey("rewind_seconds")
         val scaleMode = stringPreferencesKey("scale_mode")
         val screenSize = floatPreferencesKey("screen_size")
         val smoothing = booleanPreferencesKey("smoothing")
@@ -113,6 +118,8 @@ class SettingsRepository(private val context: Context) {
         return AppSettings(
             fastForwardSpeed = p[K.ffSpeed] ?: d.fastForwardSpeed,
             fastForwardMode = enumOr(p[K.ffMode], d.fastForwardMode),
+            slowMotionSpeed = p[K.slowSpeed] ?: d.slowMotionSpeed,
+            rewindSeconds = p[K.rewindSeconds] ?: d.rewindSeconds,
             scaleMode = enumOr(p[K.scaleMode], d.scaleMode),
             screenSize = p[K.screenSize] ?: d.screenSize,
             smoothing = p[K.smoothing] ?: d.smoothing,
@@ -152,6 +159,8 @@ class SettingsRepository(private val context: Context) {
             val s = transform(fromPrefs(p))
             p[K.ffSpeed] = s.fastForwardSpeed
             p[K.ffMode] = s.fastForwardMode.name
+            p[K.slowSpeed] = s.slowMotionSpeed
+            p[K.rewindSeconds] = s.rewindSeconds
             p[K.scaleMode] = s.scaleMode.name
             p[K.screenSize] = s.screenSize
             p[K.smoothing] = s.smoothing

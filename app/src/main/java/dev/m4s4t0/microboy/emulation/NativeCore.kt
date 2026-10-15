@@ -33,6 +33,10 @@ object NativeCore {
     @JvmStatic external fun nativeSaveState(path: String): Boolean
     @JvmStatic external fun nativeLoadState(path: String): Boolean
 
+    @JvmStatic external fun nativeSetRewind(enabled: Boolean, entries: Int, interval: Int)
+    @JvmStatic external fun nativeRewindStep(): Boolean
+    @JvmStatic external fun nativeSetSpeed(speed: Float)
+
     @JvmStatic external fun nativeAudioOpen(): Boolean
     @JvmStatic external fun nativeAudioClose()
     @JvmStatic external fun nativeAudioPause()

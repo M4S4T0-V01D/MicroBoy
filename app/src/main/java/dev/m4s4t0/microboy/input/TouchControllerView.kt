@@ -33,6 +33,8 @@ class TouchControllerView(context: Context) : View(context) {
     interface Listener {
         fun onKeysChanged(mask: Int)
         fun onFastForward(pressed: Boolean)
+        fun onRewind(pressed: Boolean)
+        fun onSlowMotion()
         fun onMenu()
         fun onLayoutEdited(layout: ControlLayout)
         fun onSelectionChanged(id: ControlId?)
@@ -59,6 +61,13 @@ class TouchControllerView(context: Context) : View(context) {
         }
 
     var haptics = true
+
+    /** Lights the slow-motion button while slow motion is on. */
+    var slowMotionOn = false
+        set(value) {
+            field = value
+            invalidate()
+        }
 
     /** Theme-derived colors (body, face buttons, pressed highlight). */
     var colors: ControllerColors = ControllerColors(0xFF1E1B2E.toInt(), 0xFF5A3F7A.toInt(), 0xFFB39DFF.toInt(), 0xFFFFFFFF.toInt())
@@ -104,6 +113,8 @@ class TouchControllerView(context: Context) : View(context) {
     private val pointerPos = HashMap<Int, FloatArray>()
     private var keyMask = 0
     private var ffPressed = false
+    private var rewindPressed = false
+    private var slowPressed = false
     private var menuPressed = false
     private var dpadMask = 0
 
@@ -177,7 +188,12 @@ class TouchControllerView(context: Context) : View(context) {
                     val rad = r.height() / 2
                     canvas.drawRoundRect(r, rad, rad, fill)
                     canvas.drawRoundRect(r, rad, rad, stroke)
-                    val label = if (id == ControlId.FAST_FORWARD) "▶▶" else id.label
+                    val label = when (id) {
+                        ControlId.FAST_FORWARD -> "▶▶"
+                        ControlId.REWIND -> "◀◀"
+                        ControlId.SLOW_MOTION -> "½×"
+                        else -> id.label
+                    }
                     label(canvas, r, label, r.height() * if (id == ControlId.L || id == ControlId.R) 0.5f else 0.42f)
                 }
             }
@@ -238,6 +254,8 @@ class TouchControllerView(context: Context) : View(context) {
         ControlId.START -> keyMask and GbaKey.START.mask != 0
         ControlId.SELECT -> keyMask and GbaKey.SELECT.mask != 0
         ControlId.FAST_FORWARD -> ffPressed
+        ControlId.REWIND -> rewindPressed
+        ControlId.SLOW_MOTION -> slowPressed || slowMotionOn
         ControlId.MENU -> menuPressed
     }
 
@@ -317,6 +335,8 @@ class TouchControllerView(context: Context) : View(context) {
         var mask = 0
         var dpad = 0
         var ff = false
+        var rw = false
+        var slow = false
         for ((id, pos) in pointerPos) {
             val x = pos[0]
             val y = pos[1]
@@ -332,16 +352,22 @@ class TouchControllerView(context: Context) : View(context) {
             if (isShown(ControlId.START) && hit(ControlId.START, x, y, 1.4f)) mask = mask or GbaKey.START.mask
             if (isShown(ControlId.SELECT) && hit(ControlId.SELECT, x, y, 1.4f)) mask = mask or GbaKey.SELECT.mask
             if (isShown(ControlId.FAST_FORWARD) && hit(ControlId.FAST_FORWARD, x, y, 1.3f)) ff = true
+            if (isShown(ControlId.REWIND) && hit(ControlId.REWIND, x, y, 1.3f)) rw = true
+            if (isShown(ControlId.SLOW_MOTION) && hit(ControlId.SLOW_MOTION, x, y, 1.3f)) slow = true
         }
         mask = mask or dpad
-        val newlyPressed = (mask and keyMask.inv()) != 0 || (ff && !ffPressed)
+        val newlyPressed = (mask and keyMask.inv()) != 0 || (ff && !ffPressed) || (rw && !rewindPressed) || (slow && !slowPressed)
         if (newlyPressed && haptics) buzz()
-        val changed = mask != keyMask || dpad != dpadMask || ff != ffPressed
+        val changed = mask != keyMask || dpad != dpadMask || ff != ffPressed || rw != rewindPressed || slow != slowPressed
         if (mask != keyMask) listener?.onKeysChanged(mask)
         if (ff != ffPressed) listener?.onFastForward(ff)
+        if (rw != rewindPressed) listener?.onRewind(rw)
+        if (slow && !slowPressed) listener?.onSlowMotion()
         keyMask = mask
         dpadMask = dpad
         ffPressed = ff
+        rewindPressed = rw
+        slowPressed = slow
         if (changed) invalidate()
     }
 
@@ -351,9 +377,12 @@ class TouchControllerView(context: Context) : View(context) {
         menuPressed = false
         if (keyMask != 0) listener?.onKeysChanged(0)
         if (ffPressed) listener?.onFastForward(false)
+        if (rewindPressed) listener?.onRewind(false)
         keyMask = 0
         dpadMask = 0
         ffPressed = false
+        rewindPressed = false
+        slowPressed = false
         invalidate()
     }
 

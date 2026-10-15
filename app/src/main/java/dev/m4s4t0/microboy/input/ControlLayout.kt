@@ -13,6 +13,8 @@ enum class ControlId(val baseWidthDp: Float, val baseHeightDp: Float, val label:
     SELECT(64f, 28f, "SELECT"),
     START(64f, 28f, "START"),
     FAST_FORWARD(56f, 30f, "FF"),
+    REWIND(56f, 30f, "Rewind"),
+    SLOW_MOTION(56f, 30f, "Slow motion"),
     MENU(42f, 42f, "MENU"),
 }
 
@@ -47,10 +49,12 @@ data class ControlLayout(val placements: Map<ControlId, ControlPlacement>) {
                 ControlId.DPAD to ControlPlacement(0.25f, 0.68f),
                 ControlId.A to ControlPlacement(0.86f, 0.64f),
                 ControlId.B to ControlPlacement(0.68f, 0.72f),
-                ControlId.SELECT to ControlPlacement(0.38f, 0.87f),
+                ControlId.MENU to ControlPlacement(0.08f, 0.87f),
+                ControlId.REWIND to ControlPlacement(0.24f, 0.87f),
+                ControlId.SELECT to ControlPlacement(0.42f, 0.87f),
                 ControlId.START to ControlPlacement(0.62f, 0.87f),
                 ControlId.FAST_FORWARD to ControlPlacement(0.86f, 0.87f),
-                ControlId.MENU to ControlPlacement(0.12f, 0.87f),
+                ControlId.SLOW_MOTION to ControlPlacement(0.86f, 0.95f, visible = false),
             )
         )
 
@@ -61,6 +65,8 @@ data class ControlLayout(val placements: Map<ControlId, ControlPlacement>) {
                 ControlId.R to ControlPlacement(0.92f, 0.10f),
                 ControlId.MENU to ControlPlacement(0.05f, 0.30f),
                 ControlId.FAST_FORWARD to ControlPlacement(0.93f, 0.30f),
+                ControlId.REWIND to ControlPlacement(0.85f, 0.30f),
+                ControlId.SLOW_MOTION to ControlPlacement(0.15f, 0.30f, visible = false),
                 ControlId.DPAD to ControlPlacement(0.11f, 0.62f),
                 ControlId.A to ControlPlacement(0.93f, 0.55f),
                 ControlId.B to ControlPlacement(0.84f, 0.72f),

@@ -36,6 +36,8 @@ import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FastForward
+import androidx.compose.material.icons.filled.FastRewind
+import androidx.compose.material.icons.filled.SlowMotionVideo
 import androidx.compose.material.icons.filled.FileOpen
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.RestartAlt
@@ -82,6 +84,14 @@ import kotlinx.coroutines.delay
 val FF_SPEEDS = listOf(2, 3, 4, 8, 0)
 fun ffLabel(speed: Int) = if (speed == 0) "Max" else "$speed×"
 
+val SLOW_SPEEDS = listOf(0.25f, 0.5f, 0.75f)
+fun slowLabel(speed: Float) = when (speed) {
+    0.25f -> "¼×"
+    0.5f -> "½×"
+    0.75f -> "¾×"
+    else -> "$speed×"
+}
+
 @Composable
 fun GameScreen(a: GameActivity, glView: GLSurfaceView, controller: TouchControllerView) {
     val s = a.settings
@@ -107,16 +117,25 @@ fun GameScreen(a: GameActivity, glView: GLSurfaceView, controller: TouchControll
             }
         }
 
-        // Fast-forward indicator
-        AnimatedVisibility(a.ffActive, Modifier.align(Alignment.TopEnd).safeDrawingPadding().padding(10.dp), enter = fadeIn(), exit = fadeOut()) {
+        // Speed indicator: rewind wins over fast-forward, which wins over slow motion.
+        val speedBadge = when {
+            a.rewindActive -> Icons.Default.FastRewind to "Rewind"
+            a.ffActive -> Icons.Default.FastForward to ffLabel(s.fastForwardSpeed)
+            a.slowActive -> Icons.Default.SlowMotionVideo to slowLabel(s.slowMotionSpeed)
+            else -> null
+        }
+        var lastBadge by remember { mutableStateOf(speedBadge) }
+        if (speedBadge != null) lastBadge = speedBadge
+        AnimatedVisibility(speedBadge != null, Modifier.align(Alignment.TopEnd).safeDrawingPadding().padding(10.dp), enter = fadeIn(), exit = fadeOut()) {
+            val (icon, label) = lastBadge ?: return@AnimatedVisibility
             Row(
                 Modifier.background(MaterialTheme.colorScheme.primary.copy(alpha = 0.85f), RoundedCornerShape(50))
                     .padding(horizontal = 10.dp, vertical = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Icon(Icons.Default.FastForward, null, Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onPrimary)
+                Icon(icon, null, Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onPrimary)
                 Spacer(Modifier.width(4.dp))
-                Text(ffLabel(s.fastForwardSpeed), color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                Text(label, color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold, fontSize = 13.sp)
             }
         }
 
@@ -213,6 +232,28 @@ private fun QuickMenu(a: GameActivity) {
                     FF_SPEEDS.forEach { sp ->
                         FilterChip(selected = s.fastForwardSpeed == sp, onClick = { a.setFastForwardSpeed(sp) }, label = { Text(ffLabel(sp)) })
                     }
+                }
+                Spacer(Modifier.height(8.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.SlowMotionVideo, null, tint = MaterialTheme.colorScheme.primary)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Slow motion", style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+                    Text(if (a.slowActive) "On" else "Off", style = MaterialTheme.typography.bodySmall)
+                    Spacer(Modifier.width(8.dp))
+                    Switch(checked = a.slowActive, onCheckedChange = { a.toggleSlowMotion() })
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    SLOW_SPEEDS.forEach { sp ->
+                        FilterChip(selected = s.slowMotionSpeed == sp, onClick = { a.setSlowMotionSpeed(sp) }, label = { Text(slowLabel(sp)) })
+                    }
+                }
+                if (s.rewindSeconds > 0) {
+                    Text(
+                        "Rewind: hold ◀◀ (or L2 on a controller) to go back up to ${s.rewindSeconds} seconds.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 12.dp),
+                    )
                 }
             }
         }

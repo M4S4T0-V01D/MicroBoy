@@ -7,6 +7,8 @@ running the [mGBA](https://mgba.io) emulation core.
 
 - Accurate emulation from mGBA: ARM7TDMI CPU, PPU, APU, DMA, timers, and SRAM/Flash/EEPROM saves.
 - **Real fast-forward.** Frames really run 2×, 3×, 4× or 8× faster, or as fast as the device allows. You can hold to fast-forward or tap to toggle it. Audio is muted while fast-forwarding.
+- **Slow motion** at ¾×, ½× or ¼×, with the audio resampled to match (it slows down and drops in pitch).
+- **Rewind.** Hold ◀◀ (or L2) to step back up to 10–60 s. mGBA records diffed snapshots every 2 frames, which costs about 0.04 ms each. Rewinding never undoes the in-game save, and the history is cleared when a state loads or the game resets.
 - Cartridge saves are separate from save states. You get 9 manual slots plus an Auto slot, quick save/load, thumbnails, export/import, and a confirmation before anything is overwritten.
 - Your library keeps ROMs where they are on your device (Storage Access Framework), and tracks recently played games, playtime, and box art.
 - Touch controls are multi-touch and themed, with editable layouts for portrait and landscape and haptic feedback. Bluetooth and USB controllers work too, with remappable buttons.
@@ -130,7 +132,7 @@ Done and building: native mGBA bridge, AAudio, GL renderer, touch and controller
 
 **First device test passed** (2026-10-15, Pokémon Emerald): video, input and cartridge saves work. The silent-audio bug found there is fixed. The app targets API 36, as Google Play requires.
 
-Requested next, not started: rewind, slow motion, gyro/tilt/solar sensors, link cable / multiplayer, and cloud save sync.
+Rewind and slow motion are done. Requested next: gyro/tilt/solar sensors, then link cable / multiplayer. Cloud save sync is parked.
 
 Planned visual-engine work, requested and not started:
 

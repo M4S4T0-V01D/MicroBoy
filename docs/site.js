@@ -5,7 +5,7 @@
 const PLAY = {
   live: false,
   price: "$0.50",
-  url: "https://play.google.com/store/apps/details?id=dev.m4s4t0.microboy",
+  url: "https://play.google.com/store/apps/details?id=rom.Micro.Boy",
 };
 
 // Same seeds as app/src/main/java/dev/m4s4t0/microboy/ui/theme/Palettes.kt.

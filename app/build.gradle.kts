@@ -20,10 +20,12 @@ android {
     ndkVersion = "27.2.12479018"
 
     defaultConfig {
-        applicationId = "dev.m4s4t0.microboy"
+        // Fixed by the Google Play listing; it can never change. (The code's
+        // namespace above is separate and stays dev.m4s4t0.microboy.)
+        applicationId = "rom.Micro.Boy"
         minSdk = 26
         targetSdk = 36  // Google Play requires API 36 from 2026-08-31
-        versionCode = 1
+        versionCode = 2
         versionName = "1.0.0"
 
         ndk {

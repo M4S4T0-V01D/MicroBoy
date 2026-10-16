@@ -30,6 +30,8 @@ import androidx.compose.material.icons.filled.CreateNewFolder
 import androidx.compose.material.icons.filled.InsertDriveFile
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.CloudDownload
+import androidx.compose.material3.TextButton
 import androidx.compose.material.icons.filled.Feedback
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.SportsEsports
@@ -97,6 +99,15 @@ fun LibraryScreen(onOpenInfo: (String) -> Unit, onOpenSettings: () -> Unit) {
     var sort by rememberSaveable { mutableStateOf(Sort.RECENT) }
     var query by rememberSaveable { mutableStateOf("") }
     var searching by rememberSaveable { mutableStateOf(false) }
+    var homebrew by rememberSaveable { mutableStateOf(false) }
+    if (homebrew) {
+        androidx.activity.compose.BackHandler { homebrew = false }
+        HomebrewScreen(
+            onBack = { homebrew = false },
+            onMessage = { android.widget.Toast.makeText(ctx, it, android.widget.Toast.LENGTH_SHORT).show() },
+        )
+        return
+    }
 
     fun play(game: Game) = ctx.startActivity(GameActivity.intent(ctx, game.id))
 
@@ -191,12 +202,22 @@ fun LibraryScreen(onOpenInfo: (String) -> Unit, onOpenSettings: () -> Unit) {
                         leadingIcon = { Icon(Icons.Default.CreateNewFolder, null) },
                         onClick = { addMenu = false; pickFolder.launch(null) },
                     )
+                    DropdownMenuItem(
+                        text = { Text("MicroBoy homebrew (free)") },
+                        leadingIcon = { Icon(Icons.Default.CloudDownload, null) },
+                        onClick = { addMenu = false; homebrew = true },
+                    )
                 }
             }
         },
     ) { pad ->
         if (games.isEmpty()) {
-            EmptyLibrary(Modifier.padding(pad), onAddFiles = { pickFiles.launch(arrayOf("*/*")) }, onAddFolder = { pickFolder.launch(null) })
+            EmptyLibrary(
+                Modifier.padding(pad),
+                onAddFiles = { pickFiles.launch(arrayOf("*/*")) },
+                onAddFolder = { pickFolder.launch(null) },
+                onHomebrew = { homebrew = true },
+            )
             return@Scaffold
         }
         LazyVerticalGrid(
@@ -284,7 +305,7 @@ private fun GameCard(game: Game, onClick: () -> Unit, onLongClick: () -> Unit) {
 }
 
 @Composable
-private fun EmptyLibrary(modifier: Modifier, onAddFiles: () -> Unit, onAddFolder: () -> Unit) {
+private fun EmptyLibrary(modifier: Modifier, onAddFiles: () -> Unit, onAddFolder: () -> Unit, onHomebrew: () -> Unit) {
     Column(
         modifier.fillMaxSize().padding(32.dp),
         verticalArrangement = Arrangement.Center,
@@ -303,5 +324,7 @@ private fun EmptyLibrary(modifier: Modifier, onAddFiles: () -> Unit, onAddFolder
         FilledTonalButton(onClick = onAddFiles) { Text("Choose .gba files") }
         Spacer(Modifier.height(8.dp))
         OutlinedButton(onClick = onAddFolder) { Text("Scan a folder") }
+        Spacer(Modifier.height(8.dp))
+        TextButton(onClick = onHomebrew) { Text("Get free MicroBoy homebrew games") }
     }
 }

@@ -19,3 +19,5 @@ gba_bios.bin
 !docs/*.gba
 testroms/microboy-demo/scene.h
 __pycache__/
+# videos are large; keep them out of git
+*.mp4

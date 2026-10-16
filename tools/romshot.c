@@ -6,7 +6,8 @@
 // Each EVENT is FRAME (save OUTDIR/FRAME.ppm) or FRAME:KEYS (hold KEYS from
 // that frame for 4 frames). KEYS uses a b s(elect) t(start) r l u d R L.
 // Prints the audio level so silent output is obvious. With ROMSHOT_WAV=path it
-// also writes the audio (48 kHz stereo) to a WAV file.
+// also writes the audio (48 kHz stereo) to a WAV file, and with
+// ROMSHOT_VIDEO=path every frame as raw RGB24 (240×160, 59.7275 fps) for ffmpeg.
 //
 // Build against a host libmgba (see tools/romshot.sh).
 #include <mgba/core/blip_buf.h>
@@ -77,6 +78,9 @@ int main(int argc, char** argv) {
     const char* wavPath = getenv("ROMSHOT_WAV");
     FILE* wav = wavPath ? fopen(wavPath, "wb") : NULL;
     if (wav) fseek(wav, 44, SEEK_SET);
+    const char* videoPath = getenv("ROMSHOT_VIDEO");
+    FILE* video = videoPath ? fopen(videoPath, "wb") : NULL;
+    static unsigned char rgb[W * H * 3];
     int held = 0, holdUntil = -1;
     static int16_t audio[4096 * 2];
     for (int frame = 0; frame <= last; ++frame) {
@@ -104,6 +108,15 @@ int main(int argc, char** argv) {
             samples += n;
         }
 
+        if (video) {
+            for (int i = 0; i < W * H; ++i) {
+                uint32_t c = buffer[i];
+                rgb[i * 3] = c & 0xFF;
+                rgb[i * 3 + 1] = (c >> 8) & 0xFF;
+                rgb[i * 3 + 2] = (c >> 16) & 0xFF;
+            }
+            fwrite(rgb, 1, sizeof(rgb), video);
+        }
         for (int i = 3; i < argc; ++i) {
             if (!strchr(argv[i], ':') && atoi(argv[i]) == frame) {
                 char path[512];
@@ -113,6 +126,7 @@ int main(int argc, char** argv) {
         }
     }
     printf("audio: rms %.0f, peak %d over %ld samples\n", samples ? sqrt(sumSq / samples) : 0.0, peak, samples);
+    if (video) fclose(video);
     if (wav) {
         uint32_t data = (uint32_t) samples * 4, rate = 48000, byteRate = rate * 4, riff = 36 + data;
         uint16_t fmt[] = { 1, 2 }, align[] = { 4, 16 };

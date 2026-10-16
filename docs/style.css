@@ -263,3 +263,12 @@ kbd.arrow { font: 600 13px/1 var(--sans); padding: 3px 7px; }
 .listen { margin: 18px 0 0; }
 .listen figcaption { font-size: 13px; color: var(--ink-dim); margin-bottom: 6px; }
 .listen audio { width: 100%; max-width: 420px; height: 40px; }
+
+/* homebrew */
+.hb-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; }
+@media (max-width: 420px) { .hb-grid { grid-template-columns: 1fr; } }
+.hb { display: grid; grid-template-columns: 120px 1fr; gap: 16px; align-items: start; }
+.hb img { width: 120px; height: 120px; border-radius: 12px; image-rendering: pixelated; display: block; }
+.hb p { margin: 4px 0 12px; }
+.hb .btn { padding: 10px 16px; font-size: 14px; }
+@media (max-width: 420px) { .hb { grid-template-columns: 84px 1fr; } .hb img { width: 84px; height: 84px; } }

@@ -1,0 +1,56 @@
+{
+ "version": 1,
+ "games": [
+  {
+   "title": "MicroBoy Jukebox",
+   "author": "M4S4T0",
+   "file": "microboy-jukebox.gba",
+   "cover": "homebrew/jukebox.png",
+   "sha1": "9bdfb8622f5a4582a745db13b8ade89e8ec36496",
+   "size": 452012,
+   "description": "20 animated pixel scenes, each with its own song, from cherry blossoms to neon nights. A/B switch scenes, Select turns on auto-play.",
+   "tags": [
+    "music",
+    "art"
+   ]
+  },
+  {
+   "title": "MicroBoy Demo",
+   "author": "M4S4T0",
+   "file": "microboy-demo.gba",
+   "cover": "homebrew/demo.png",
+   "sha1": "60bbde85af251f9ebbc24a9022bcd29c70dbe90c",
+   "size": 30514,
+   "description": "The endless pixel scene from our website with Pocket Lullaby, a slow looping song. Watch the frame counter race in fast-forward.",
+   "tags": [
+    "music",
+    "demo"
+   ]
+  },
+  {
+   "title": "Link Test",
+   "author": "M4S4T0",
+   "file": "link-test.gba",
+   "cover": "homebrew/link-test.png",
+   "sha1": "4b02166e7b2a9bfe1b59582495b3a09e189931e9",
+   "size": 600,
+   "description": "Checks online link: two players exchange data every frame. Green means every transfer arrived intact.",
+   "tags": [
+    "link",
+    "test"
+   ]
+  },
+  {
+   "title": "Input Test",
+   "author": "M4S4T0",
+   "file": "input-test.gba",
+   "cover": "homebrew/input-test.png",
+   "sha1": "51a19563c4dec3e25cbbc6d4f2f36a14434b25dd",
+   "size": 2198,
+   "description": "Lights up every button you press, plays a tone and keeps a save counter. Handy for testing controllers and saves.",
+   "tags": [
+    "test"
+   ]
+  }
+ ]
+}

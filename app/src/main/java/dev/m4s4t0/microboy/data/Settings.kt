@@ -1,5 +1,7 @@
 package dev.m4s4t0.microboy.data
 
+import dev.m4s4t0.microboy.ui.theme.UiShadows
+import dev.m4s4t0.microboy.ui.theme.UiCorners
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
@@ -75,6 +77,9 @@ data class AppSettings(
     // Online link: the nickname other players see, whether to appear in the
     // lobby and show the current game, and players blocked by their lobby id.
     val linkNick: String = "",
+    // App look: corner style and shadows (default rounded, no shadows).
+    val uiCorners: UiCorners = UiCorners.ROUNDED,
+    val uiShadows: UiShadows = UiShadows.NONE,
     val linkOnline: Boolean = false,
     val linkVisible: Boolean = true,
     val linkShareGame: Boolean = true,
@@ -124,6 +129,8 @@ class SettingsRepository(private val context: Context) {
         val boxArt = booleanPreferencesKey("download_box_art")
         val importRoms = booleanPreferencesKey("import_roms")
         val linkNick = stringPreferencesKey("link_nick")
+        val uiCorners = stringPreferencesKey("ui_corners")
+        val uiShadows = stringPreferencesKey("ui_shadows")
         val linkOnline = booleanPreferencesKey("link_online")
         val linkVisible = booleanPreferencesKey("link_visible")
         val linkShareGame = booleanPreferencesKey("link_share_game")
@@ -172,6 +179,8 @@ class SettingsRepository(private val context: Context) {
             downloadBoxArt = p[K.boxArt] ?: d.downloadBoxArt,
             importRoms = p[K.importRoms] ?: d.importRoms,
             linkNick = p[K.linkNick] ?: d.linkNick,
+            uiCorners = enumOr(p[K.uiCorners], d.uiCorners),
+            uiShadows = enumOr(p[K.uiShadows], d.uiShadows),
             linkOnline = p[K.linkOnline] ?: d.linkOnline,
             linkVisible = p[K.linkVisible] ?: d.linkVisible,
             linkShareGame = p[K.linkShareGame] ?: d.linkShareGame,
@@ -220,6 +229,8 @@ class SettingsRepository(private val context: Context) {
             p[K.boxArt] = s.downloadBoxArt
             p[K.importRoms] = s.importRoms
             p[K.linkNick] = s.linkNick
+            p[K.uiCorners] = s.uiCorners.name
+            p[K.uiShadows] = s.uiShadows.name
             p[K.linkOnline] = s.linkOnline
             p[K.linkVisible] = s.linkVisible
             p[K.linkShareGame] = s.linkShareGame

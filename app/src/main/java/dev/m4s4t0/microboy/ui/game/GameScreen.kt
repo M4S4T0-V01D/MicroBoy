@@ -1,5 +1,9 @@
 package dev.m4s4t0.microboy.ui.game
 
+import dev.m4s4t0.microboy.ui.theme.uiBorder
+import dev.m4s4t0.microboy.ui.theme.uiElevation
+import dev.m4s4t0.microboy.ui.theme.uiPill
+import dev.m4s4t0.microboy.ui.theme.uiShape
 import android.opengl.GLSurfaceView
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -108,7 +112,7 @@ fun GameScreen(a: GameActivity, glView: GLSurfaceView, controller: TouchControll
             val st = a.stats
             Column(
                 Modifier.safeDrawingPadding().padding(8.dp)
-                    .background(Color.Black.copy(alpha = 0.55f), RoundedCornerShape(6.dp))
+                    .background(Color.Black.copy(alpha = 0.55f), uiShape(6.dp))
                     .padding(horizontal = 8.dp, vertical = 4.dp)
             ) {
                 val style = MaterialTheme.typography.labelSmall.copy(color = Color(0xFF9CFFB0))
@@ -133,7 +137,7 @@ fun GameScreen(a: GameActivity, glView: GLSurfaceView, controller: TouchControll
         AnimatedVisibility(speedBadge != null, Modifier.align(Alignment.TopEnd).safeDrawingPadding().padding(10.dp), enter = fadeIn(), exit = fadeOut()) {
             val (icon, label) = lastBadge ?: return@AnimatedVisibility
             Row(
-                Modifier.background(MaterialTheme.colorScheme.primary.copy(alpha = 0.85f), RoundedCornerShape(50))
+                Modifier.background(MaterialTheme.colorScheme.primary.copy(alpha = 0.85f), uiPill())
                     .padding(horizontal = 10.dp, vertical = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -169,7 +173,7 @@ fun GameScreen(a: GameActivity, glView: GLSurfaceView, controller: TouchControll
             enter = slideInVertically { it } + fadeIn(),
             exit = slideOutVertically { it } + fadeOut(),
         ) {
-            Surface(shape = RoundedCornerShape(50), color = MaterialTheme.colorScheme.inverseSurface) {
+            Surface(shape = uiPill(), color = MaterialTheme.colorScheme.inverseSurface, shadowElevation = uiElevation()) {
                 Text(msg ?: "", Modifier.padding(horizontal = 18.dp, vertical = 10.dp), color = MaterialTheme.colorScheme.inverseOnSurface)
             }
         }
@@ -179,7 +183,7 @@ fun GameScreen(a: GameActivity, glView: GLSurfaceView, controller: TouchControll
                 onDismissRequest = {},
                 title = { Text("Can't start ${a.game.displayTitle}") },
                 text = { Text("$err\n\nYou can re-select the file from the game's info page in the library.") },
-                confirmButton = { TextButton(onClick = { a.exit() }) { Text("Back to library") } },
+                confirmButton = { TextButton(shape = uiPill(), onClick = { a.exit() }) { Text("Back to library") } },
             )
         }
     }
@@ -197,7 +201,9 @@ private fun QuickMenu(a: GameActivity) {
         contentAlignment = Alignment.Center,
     ) {
         Surface(
-            shape = RoundedCornerShape(28.dp),
+            shape = uiShape(28.dp),
+            shadowElevation = uiElevation(),
+            border = uiBorder(),
             color = MaterialTheme.colorScheme.surfaceContainer,
             modifier = Modifier.safeDrawingPadding().padding(16.dp).widthIn(max = 560.dp)
                 .clickable(remember { MutableInteractionSource() }, null) {},
@@ -210,7 +216,7 @@ private fun QuickMenu(a: GameActivity) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Spacer(Modifier.height(16.dp))
-                Button(onClick = { a.closeMenu() }, Modifier.fillMaxWidth().height(52.dp)) {
+                Button(shape = uiPill(), onClick = { a.closeMenu() }, modifier = Modifier.fillMaxWidth().height(52.dp)) {
                     Icon(Icons.Default.PlayArrow, null)
                     Spacer(Modifier.width(8.dp))
                     Text("Resume", fontSize = 16.sp)
@@ -276,8 +282,8 @@ private fun QuickMenu(a: GameActivity) {
             onDismissRequest = { confirmReset = false },
             title = { Text("Reset game?") },
             text = { Text("The game restarts from boot. Unsaved progress is lost; your in-game save file is kept.") },
-            confirmButton = { TextButton(onClick = { confirmReset = false; a.reset() }) { Text("Reset") } },
-            dismissButton = { TextButton(onClick = { confirmReset = false }) { Text("Cancel") } },
+            confirmButton = { TextButton(shape = uiPill(), onClick = { confirmReset = false; a.reset() }) { Text("Reset") } },
+            dismissButton = { TextButton(shape = uiPill(), onClick = { confirmReset = false }) { Text("Cancel") } },
         )
     }
 }
@@ -311,7 +317,9 @@ private fun SunControl(a: GameActivity) {
 private fun MenuTile(icon: ImageVector, label: String, onClick: () -> Unit) {
     Surface(
         onClick = onClick,
-        shape = RoundedCornerShape(16.dp),
+        shape = uiShape(16.dp),
+        shadowElevation = uiElevation() / 2,
+        border = uiBorder(),
         color = MaterialTheme.colorScheme.surfaceContainerHighest,
         modifier = Modifier.width(118.dp).height(78.dp),
     ) {
@@ -360,7 +368,9 @@ private fun EditToolbar(a: GameActivity) {
     val sel = a.selectedControl
     BoxWithConstraints(Modifier.fillMaxSize()) {
         Surface(
-            shape = RoundedCornerShape(20.dp),
+            shape = uiShape(20.dp),
+            shadowElevation = uiElevation(),
+            border = uiBorder(),
             color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.95f),
             modifier = Modifier.align(Alignment.TopCenter).safeDrawingPadding().padding(8.dp).widthIn(max = 460.dp),
         ) {
@@ -388,8 +398,8 @@ private fun EditToolbar(a: GameActivity) {
                     }
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(onClick = { a.resetLayout() }) { Text("Reset layout") }
-                    Button(onClick = { a.finishEditing() }) { Text("Done") }
+                    OutlinedButton(shape = uiPill(), onClick = { a.resetLayout() }) { Text("Reset layout") }
+                    Button(shape = uiPill(), onClick = { a.finishEditing() }) { Text("Done") }
                 }
             }
         }

@@ -1,5 +1,9 @@
 package dev.m4s4t0.microboy.ui.game
 
+import dev.m4s4t0.microboy.ui.theme.uiBorder
+import dev.m4s4t0.microboy.ui.theme.uiElevation
+import dev.m4s4t0.microboy.ui.theme.uiPill
+import dev.m4s4t0.microboy.ui.theme.uiShape
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -128,12 +132,12 @@ private fun NickSetup(a: GameActivity) {
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        TextButton(onClick = {
+        TextButton(shape = uiPill(), onClick = {
             runCatching {
                 context.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse("https://m4s4t0-v01d.github.io/MicroBoy/privacy.html")))
             }
         }) { Text("Privacy policy") }
-        Button(onClick = { a.link.setNick(nick) }, enabled = nick.trim().length >= 2) { Text("Go online") }
+        Button(shape = uiPill(), onClick = { a.link.setNick(nick) }, enabled = nick.trim().length >= 2) { Text("Go online") }
     }
 }
 
@@ -144,7 +148,9 @@ private fun SessionCard(a: GameActivity) {
     val st = link.status ?: return
     val session = link.session ?: return
     Surface(
-        shape = RoundedCornerShape(20.dp),
+        shape = uiShape(20.dp),
+        shadowElevation = uiElevation(),
+        border = uiBorder(),
         color = MaterialTheme.colorScheme.primaryContainer,
         modifier = Modifier.fillMaxWidth().padding(16.dp),
     ) {
@@ -174,7 +180,7 @@ private fun SessionCard(a: GameActivity) {
                 LinkConfig.QUICK_MESSAGES.forEachIndexed { i, m -> AssistChip(onClick = { link.say(i) }, label = { Text(m) }) }
             }
             Spacer(Modifier.height(8.dp))
-            OutlinedButton(onClick = { link.disconnect() }) { Text("Disconnect") }
+            OutlinedButton(shape = uiPill(), onClick = { link.disconnect() }) { Text("Disconnect") }
         }
     }
 }
@@ -209,7 +215,7 @@ private fun OnlineCard(a: GameActivity, lobby: LobbyState) {
             Text("Visible in the lobby", Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
             Switch(checked = s.linkVisible, onCheckedChange = { link.setVisible(it) })
         }
-        TextButton(onClick = { editNick = true }) { Text("Change nickname") }
+        TextButton(shape = uiPill(), onClick = { editNick = true }) { Text("Change nickname") }
         HorizontalDivider()
     }
     if (editNick) {
@@ -219,9 +225,9 @@ private fun OnlineCard(a: GameActivity, lobby: LobbyState) {
             title = { Text("Nickname") },
             text = { OutlinedTextField(value = nick, onValueChange = { nick = it.take(16) }, singleLine = true) },
             confirmButton = {
-                TextButton(enabled = nick.trim().length >= 2, onClick = { editNick = false; link.setNick(nick) }) { Text("Save") }
+                TextButton(shape = uiPill(), enabled = nick.trim().length >= 2, onClick = { editNick = false; link.setNick(nick) }) { Text("Save") }
             },
-            dismissButton = { TextButton(onClick = { editNick = false }) { Text("Cancel") } },
+            dismissButton = { TextButton(shape = uiPill(), onClick = { editNick = false }) { Text("Cancel") } },
         )
     }
 }
@@ -260,9 +266,9 @@ private fun PlayerRow(a: GameActivity, p: LobbyPlayer) {
             }
         }
         if (link.outgoing == p.id) {
-            OutlinedButton(onClick = { link.cancelInvite() }) { Text("Cancel") }
+            OutlinedButton(shape = uiPill(), onClick = { link.cancelInvite() }) { Text("Cancel") }
         } else {
-            Button(onClick = { link.invite(p) }, enabled = !link.busy) { Text("Invite") }
+            Button(shape = uiPill(), onClick = { link.invite(p) }, enabled = !link.busy) { Text("Invite") }
         }
         Box {
             IconButton(onClick = { menu = true }) { Icon(Icons.Default.MoreVert, "More") }
@@ -288,8 +294,8 @@ fun LinkDialogs(a: GameActivity) {
                         "Linking pauses your game briefly while you swap save states."
                 )
             },
-            confirmButton = { TextButton(onClick = { link.accept() }) { Text("Link") } },
-            dismissButton = { TextButton(onClick = { link.decline() }) { Text("No thanks") } },
+            confirmButton = { TextButton(shape = uiPill(), onClick = { link.accept() }) { Text("Link") } },
+            dismissButton = { TextButton(shape = uiPill(), onClick = { link.decline() }) { Text("No thanks") } },
         )
     }
     link.reporting?.let { p ->
@@ -313,8 +319,8 @@ fun LinkDialogs(a: GameActivity) {
                     Text("They'll also be blocked for you.", style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 8.dp))
                 }
             },
-            confirmButton = { TextButton(onClick = { link.report(p, pick); link.reporting = null }) { Text("Report") } },
-            dismissButton = { TextButton(onClick = { link.reporting = null }) { Text("Cancel") } },
+            confirmButton = { TextButton(shape = uiPill(), onClick = { link.report(p, pick); link.reporting = null }) { Text("Report") } },
+            dismissButton = { TextButton(shape = uiPill(), onClick = { link.reporting = null }) { Text("Cancel") } },
         )
     }
 }
@@ -325,7 +331,7 @@ fun LinkBadge(a: GameActivity, modifier: Modifier) {
     val st = a.link.status as? NetplaySession.Status.Linked ?: return
     val session = a.link.session ?: return
     Row(
-        modifier.background(Color.Black.copy(alpha = 0.55f), RoundedCornerShape(50)).padding(horizontal = 10.dp, vertical = 4.dp),
+        modifier.background(Color.Black.copy(alpha = 0.55f), uiPill()).padding(horizontal = 10.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(Icons.Default.Link, null, Modifier.size(14.dp), tint = Color(0xFF9CFFB0))

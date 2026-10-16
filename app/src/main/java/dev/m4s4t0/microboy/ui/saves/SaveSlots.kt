@@ -1,5 +1,6 @@
 package dev.m4s4t0.microboy.ui.saves
 
+import dev.m4s4t0.microboy.ui.theme.uiPill
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -104,8 +105,8 @@ fun SaveSlotGrid(
             onDismissRequest = { confirm = null },
             title = { Text("Are you sure?") },
             text = { Text(msg) },
-            confirmButton = { TextButton(onClick = { confirm = null; action() }) { Text("Continue") } },
-            dismissButton = { TextButton(onClick = { confirm = null }) { Text("Cancel") } },
+            confirmButton = { TextButton(shape = uiPill(), onClick = { confirm = null; action() }) { Text("Continue") } },
+            dismissButton = { TextButton(shape = uiPill(), onClick = { confirm = null }) { Text("Cancel") } },
         )
     }
 }

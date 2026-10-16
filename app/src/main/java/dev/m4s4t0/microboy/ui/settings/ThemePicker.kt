@@ -1,5 +1,9 @@
 package dev.m4s4t0.microboy.ui.settings
 
+import dev.m4s4t0.microboy.ui.theme.uiBorder
+import dev.m4s4t0.microboy.ui.theme.uiElevation
+import dev.m4s4t0.microboy.ui.theme.uiPill
+import dev.m4s4t0.microboy.ui.theme.uiShape
 import android.os.Build
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
@@ -96,7 +100,7 @@ private fun ThemeCard(name: String, seeds: ThemeSeeds, selected: Boolean, badge:
         Box(
             Modifier.border(
                 BorderStroke(if (selected) 3.dp else 1.dp, if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant),
-                RoundedCornerShape(18.dp),
+                uiShape(18.dp),
             ).padding(5.dp)
         ) {
             HandheldPreview(seeds, Modifier.width(84.dp).aspectRatio(0.66f))
@@ -120,7 +124,7 @@ private fun ThemeCard(name: String, seeds: ThemeSeeds, selected: Boolean, badge:
 fun HandheldPreview(seeds: ThemeSeeds, modifier: Modifier = Modifier) {
     val scheme = remember(seeds) { Palettes.scheme(seeds) }
     val ctrl = remember(seeds) { Palettes.controller(seeds) }
-    Canvas(modifier.clip(RoundedCornerShape(14.dp)).background(scheme.surfaceContainerHigh)) {
+    Canvas(modifier.clip(uiShape(14.dp)).background(scheme.surfaceContainerHigh)) {
         val w = size.width
         val h = size.height
         // screen bezel + screen with a primary→accent glow
@@ -162,7 +166,7 @@ fun CustomThemeEditor(seeds: ThemeSeeds, onChange: (ThemeSeeds) -> Unit) {
             SeedChip("Primary", seeds.primary) { editing = "primary" }
             SeedChip("Accent", seeds.accent) { editing = "accent" }
             SeedChip("Background", seeds.background) { editing = "background" }
-            FilledTonalButton(onClick = { onChange(randomSeeds()) }) {
+            FilledTonalButton(shape = uiPill(), onClick = { onChange(randomSeeds()) }) {
                 Icon(Icons.Default.AutoAwesome, null, Modifier.size(18.dp))
                 Spacer(Modifier.width(6.dp))
                 Text("Surprise me")
@@ -186,7 +190,7 @@ fun CustomThemeEditor(seeds: ThemeSeeds, onChange: (ThemeSeeds) -> Unit) {
 
 @Composable
 private fun SeedChip(label: String, color: Int, onClick: () -> Unit) {
-    Surface(onClick = onClick, shape = RoundedCornerShape(50), color = MaterialTheme.colorScheme.surfaceContainerHigh) {
+    Surface(onClick = onClick, shape = uiPill(), color = MaterialTheme.colorScheme.surfaceContainerHigh) {
         Row(Modifier.padding(start = 6.dp, end = 14.dp, top = 6.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.size(26.dp).clip(CircleShape).background(Color(color)).border(1.dp, MaterialTheme.colorScheme.outline, CircleShape))
             Spacer(Modifier.width(8.dp))
@@ -237,7 +241,7 @@ fun ColorPickerDialog(title: String, initial: Color, onDismiss: () -> Unit, onPi
             Column {
                 // Saturation (x) / value (y) square
                 Box(
-                    Modifier.fillMaxWidth().aspectRatio(1.6f).clip(RoundedCornerShape(12.dp))
+                    Modifier.fillMaxWidth().aspectRatio(1.6f).clip(uiShape(12.dp))
                         .pointerInput(Unit) {
                             fun upd(o: Offset) {
                                 sat = (o.x / size.width).coerceIn(0f, 1f)
@@ -264,7 +268,7 @@ fun ColorPickerDialog(title: String, initial: Color, onDismiss: () -> Unit, onPi
                 // Hue bar
                 val density = LocalDensity.current
                 Box(
-                    Modifier.fillMaxWidth().height(28.dp).clip(RoundedCornerShape(50))
+                    Modifier.fillMaxWidth().height(28.dp).clip(uiPill())
                         .pointerInput(Unit) { detectTapGestures { hue = (it.x / size.width * 360f).coerceIn(0f, 359.9f) } }
                         .pointerInput(Unit) {
                             detectDragGestures { change, _ -> hue = (change.position.x / size.width * 360f).coerceIn(0f, 359.9f) }
@@ -288,7 +292,7 @@ fun ColorPickerDialog(title: String, initial: Color, onDismiss: () -> Unit, onPi
                 }
                 Spacer(Modifier.height(12.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.size(48.dp).clip(RoundedCornerShape(12.dp)).background(color))
+                    Box(Modifier.size(48.dp).clip(uiShape(12.dp)).background(color))
                     Spacer(Modifier.width(12.dp))
                     OutlinedTextField(
                         value = hex,
@@ -305,7 +309,7 @@ fun ColorPickerDialog(title: String, initial: Color, onDismiss: () -> Unit, onPi
                 }
             }
         },
-        confirmButton = { TextButton(onClick = { onPick(color) }) { Text("Use color") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        confirmButton = { TextButton(shape = uiPill(), onClick = { onPick(color) }) { Text("Use color") } },
+        dismissButton = { TextButton(shape = uiPill(), onClick = onDismiss) { Text("Cancel") } },
     )
 }

@@ -1,5 +1,9 @@
 package dev.m4s4t0.microboy.ui.library
 
+import dev.m4s4t0.microboy.ui.theme.uiBorder
+import dev.m4s4t0.microboy.ui.theme.uiElevation
+import dev.m4s4t0.microboy.ui.theme.uiPill
+import dev.m4s4t0.microboy.ui.theme.uiShape
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
@@ -173,13 +177,15 @@ fun HomebrewScreen(onBack: () -> Unit, onMessage: (String) -> Unit) {
                     items(games!!, key = { it.sha1 }) { g ->
                         val owned = library.any { it.id == g.sha1 }
                         Surface(
-                            shape = RoundedCornerShape(18.dp),
+                            shape = uiShape(18.dp),
+                            shadowElevation = uiElevation(),
+                            border = uiBorder(),
                             color = MaterialTheme.colorScheme.surfaceContainer,
                             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                         ) {
                             Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                                 val bmp = covers[g.sha1]
-                                Box(Modifier.size(84.dp).clip(RoundedCornerShape(12.dp)).background(MaterialTheme.colorScheme.surfaceVariant)) {
+                                Box(Modifier.size(84.dp).clip(uiShape(12.dp)).background(MaterialTheme.colorScheme.surfaceVariant)) {
                                     if (bmp != null) {
                                         Image(bmp.asImageBitmap(), null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop,
                                             filterQuality = FilterQuality.None)
@@ -198,14 +204,14 @@ fun HomebrewScreen(onBack: () -> Unit, onMessage: (String) -> Unit) {
                                             Text("In your library", style = MaterialTheme.typography.labelLarge)
                                         }
                                         busy[g.sha1] == true -> CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.dp)
-                                        else -> Button(onClick = { install(g) }) { Text("Get · ${sizeLabel(g.size)}") }
+                                        else -> Button(shape = uiPill(), onClick = { install(g) }) { Text("Get · ${sizeLabel(g.size)}") }
                                     }
                                 }
                             }
                         }
                     }
                     item {
-                        OutlinedButton(onClick = onBack, Modifier.padding(16.dp)) { Text("Done") }
+                        OutlinedButton(shape = uiPill(), onClick = onBack, modifier = Modifier.padding(16.dp)) { Text("Done") }
                     }
                 }
             }

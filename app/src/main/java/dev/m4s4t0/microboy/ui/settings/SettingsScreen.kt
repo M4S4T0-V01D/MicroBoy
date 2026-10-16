@@ -1,5 +1,13 @@
 package dev.m4s4t0.microboy.ui.settings
 
+import dev.m4s4t0.microboy.ui.theme.uiPill
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Surface
+import dev.m4s4t0.microboy.ui.theme.uiBorder
+import dev.m4s4t0.microboy.ui.theme.uiElevation
+import dev.m4s4t0.microboy.ui.theme.uiShape
+import dev.m4s4t0.microboy.ui.theme.UiShadows
+import dev.m4s4t0.microboy.ui.theme.UiCorners
 import android.net.Uri
 import android.os.Build
 import android.view.KeyEvent
@@ -238,7 +246,7 @@ private fun LazyListScope.controlsSection(s: AppSettings, set: Setter) {
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            TextButton(onClick = {
+            TextButton(shape = uiPill(), onClick = {
                 set { copy(layoutPortrait = ControlLayout.defaultPortrait(), layoutLandscape = ControlLayout.defaultLandscape()) }
             }) { Text("Reset both layouts") }
         }
@@ -276,7 +284,7 @@ private fun MappingSection(s: AppSettings, set: Setter) {
                 )
             }
         }
-        TextButton(onClick = { set { copy(gamepadMapping = GamepadMapping.default()) } }, Modifier.padding(horizontal = 8.dp)) {
+        TextButton(shape = uiPill(), onClick = { set { copy(gamepadMapping = GamepadMapping.default()) } }, modifier = Modifier.padding(horizontal = 8.dp)) {
             Text("Restore default mapping")
         }
     }
@@ -302,9 +310,9 @@ private fun MappingSection(s: AppSettings, set: Setter) {
                 LaunchedEffect(Unit) { focus.requestFocus() }
             },
             confirmButton = {
-                TextButton(onClick = { set { copy(gamepadMapping = gamepadMapping.clear(action)) }; capturing = null }) { Text("Clear") }
+                TextButton(shape = uiPill(), onClick = { set { copy(gamepadMapping = gamepadMapping.clear(action)) }; capturing = null }) { Text("Clear") }
             },
-            dismissButton = { TextButton(onClick = { capturing = null }) { Text("Cancel") } },
+            dismissButton = { TextButton(shape = uiPill(), onClick = { capturing = null }) { Text("Cancel") } },
         )
     }
 }
@@ -378,8 +386,8 @@ private fun BiosSection(s: AppSettings, set: Setter) {
         }
         SwitchRow("Skip BIOS intro", checked = s.skipBiosIntro, enabled = s.useBios && hasBios) { set { copy(skipBiosIntro = it) } }
         Row(Modifier.padding(horizontal = 8.dp)) {
-            TextButton(onClick = { picker.launch(arrayOf("*/*")) }) { Text(if (hasBios) "Replace BIOS…" else "Select BIOS file…") }
-            if (hasBios) TextButton(onClick = { storage.biosFile.delete(); set { copy(useBios = false) }; version++ }) { Text("Remove") }
+            TextButton(shape = uiPill(), onClick = { picker.launch(arrayOf("*/*")) }) { Text(if (hasBios) "Replace BIOS…" else "Select BIOS file…") }
+            if (hasBios) TextButton(shape = uiPill(), onClick = { storage.biosFile.delete(); set { copy(useBios = false) }; version++ }) { Text("Remove") }
         }
         error?.let { Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(horizontal = 16.dp)) }
     }
@@ -405,6 +413,17 @@ private fun LazyListScope.themeSection(s: AppSettings, set: Setter) {
     if (s.themeId == Palettes.CUSTOM) item {
         CustomThemeEditor(s.customTheme) { seeds -> set { copy(customTheme = seeds) } }
     }
+    item {
+        ChoiceRow("Corners", UiCorners.entries, s.uiCorners, { it.label }, "The shape of panels, buttons and dialogs.") {
+            set { copy(uiCorners = it) }
+        }
+    }
+    item {
+        ChoiceRow("Shadows", UiShadows.entries, s.uiShadows, { it.label }, "How panels stand out: flat, outlined, or with a shadow.") {
+            set { copy(uiShadows = it) }
+        }
+    }
+    item { StylePreview() }
 }
 
 private fun LazyListScope.appearanceSection(s: AppSettings, set: Setter) {
@@ -444,11 +463,11 @@ private fun AboutSection(onReset: () -> Unit) {
             )
             val context = LocalContext.current
             Row(Modifier.padding(top = 8.dp)) {
-                Button(onClick = { Feedback.email(context) }) { Text("Send feedback") }
+                Button(shape = uiPill(), onClick = { Feedback.email(context) }) { Text("Send feedback") }
                 Spacer(Modifier.width(8.dp))
-                OutlinedButton(onClick = { Feedback.openGuide(context) }) { Text("Testing guide") }
+                OutlinedButton(shape = uiPill(), onClick = { Feedback.openGuide(context) }) { Text("Testing guide") }
             }
-            TextButton(onClick = { confirm = true }, Modifier.padding(top = 8.dp)) { Text("Reset all settings") }
+            TextButton(shape = uiPill(), onClick = { confirm = true }, modifier = Modifier.padding(top = 8.dp)) { Text("Reset all settings") }
         }
     }
     if (confirm) {
@@ -456,8 +475,27 @@ private fun AboutSection(onReset: () -> Unit) {
             onDismissRequest = { confirm = false },
             title = { Text("Reset all settings?") },
             text = { Text("Display, controls, mappings and other preferences return to defaults. Games and saves are not affected.") },
-            confirmButton = { TextButton(onClick = { confirm = false; onReset() }) { Text("Reset") } },
-            dismissButton = { TextButton(onClick = { confirm = false }) { Text("Cancel") } },
+            confirmButton = { TextButton(shape = uiPill(), onClick = { confirm = false; onReset() }) { Text("Reset") } },
+            dismissButton = { TextButton(shape = uiPill(), onClick = { confirm = false }) { Text("Cancel") } },
         )
+    }
+}
+
+
+/** A small sample of the current corner and shadow style. */
+@Composable
+private fun StylePreview() {
+    Row(Modifier.padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+        Surface(
+            shape = uiShape(16.dp),
+            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+            shadowElevation = uiElevation(),
+            border = uiBorder(),
+            modifier = Modifier.size(width = 150.dp, height = 64.dp),
+        ) {
+            Box(contentAlignment = Alignment.Center) { Text("Panel", style = MaterialTheme.typography.labelLarge) }
+        }
+        Spacer(Modifier.width(12.dp))
+        Button(shape = uiPill(), onClick = {}) { Text("Button") }
     }
 }

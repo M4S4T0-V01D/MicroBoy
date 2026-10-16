@@ -1,5 +1,9 @@
 package dev.m4s4t0.microboy.ui.library
 
+import dev.m4s4t0.microboy.ui.theme.uiBorder
+import dev.m4s4t0.microboy.ui.theme.uiElevation
+import dev.m4s4t0.microboy.ui.theme.uiPill
+import dev.m4s4t0.microboy.ui.theme.uiShape
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -188,6 +192,10 @@ fun LibraryScreen(onOpenInfo: (String) -> Unit, onOpenSettings: () -> Unit) {
             Box {
                 ExtendedFloatingActionButton(
                     onClick = { addMenu = true },
+                    elevation = androidx.compose.material3.FloatingActionButtonDefaults.elevation(
+                        defaultElevation = uiElevation(), pressedElevation = uiElevation(),
+                        focusedElevation = uiElevation(), hoveredElevation = uiElevation(),
+                    ),
                     icon = { if (busy) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp) else Icon(Icons.Default.Add, null) },
                     text = { Text(if (busy) "Adding…" else "Add games") },
                 )
@@ -258,7 +266,9 @@ private fun ContinueCard(game: Game, onPlay: () -> Unit, onInfo: () -> Unit) {
     Card(
         onClick = onInfo,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
-        shape = RoundedCornerShape(24.dp),
+        shape = uiShape(24.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = uiElevation()),
+        border = uiBorder(),
     ) {
         Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
             CoverArt(game, Modifier.size(96.dp))
@@ -279,7 +289,7 @@ private fun ContinueCard(game: Game, onPlay: () -> Unit, onInfo: () -> Unit) {
                     color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f),
                 )
                 Spacer(Modifier.height(8.dp))
-                Button(onClick = onPlay) {
+                Button(shape = uiPill(), onClick = onPlay) {
                     Icon(Icons.Default.PlayArrow, null)
                     Spacer(Modifier.width(6.dp))
                     Text("Resume")
@@ -321,10 +331,10 @@ private fun EmptyLibrary(modifier: Modifier, onAddFiles: () -> Unit, onAddFolder
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(Modifier.height(24.dp))
-        FilledTonalButton(onClick = onAddFiles) { Text("Choose .gba files") }
+        FilledTonalButton(shape = uiPill(), onClick = onAddFiles) { Text("Choose .gba files") }
         Spacer(Modifier.height(8.dp))
-        OutlinedButton(onClick = onAddFolder) { Text("Scan a folder") }
+        OutlinedButton(shape = uiPill(), onClick = onAddFolder) { Text("Scan a folder") }
         Spacer(Modifier.height(8.dp))
-        TextButton(onClick = onHomebrew) { Text("Get free MicroBoy homebrew games") }
+        TextButton(shape = uiPill(), onClick = onHomebrew) { Text("Get free MicroBoy homebrew games") }
     }
 }

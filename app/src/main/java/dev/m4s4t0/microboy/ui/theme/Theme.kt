@@ -1,5 +1,6 @@
 package dev.m4s4t0.microboy.ui.theme
 
+import androidx.compose.runtime.CompositionLocalProvider
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
@@ -32,5 +33,8 @@ fun MicroBoyTheme(settings: AppSettings, content: @Composable () -> Unit) {
     } else {
         Palettes.scheme(Palettes.seedsFor(settings.themeId, settings.customTheme))
     }
-    MaterialTheme(colorScheme = colors, typography = AppTypography, content = content)
+    val style = UiStyle(settings.uiCorners, settings.uiShadows)
+    CompositionLocalProvider(LocalUiStyle provides style) {
+        MaterialTheme(colorScheme = colors, typography = AppTypography, shapes = style.materialShapes(), content = content)
+    }
 }

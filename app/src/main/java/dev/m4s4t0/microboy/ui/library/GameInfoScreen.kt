@@ -1,5 +1,6 @@
 package dev.m4s4t0.microboy.ui.library
 
+import dev.m4s4t0.microboy.ui.theme.uiPill
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
@@ -149,7 +150,7 @@ fun GameInfoScreen(id: String, onBack: () -> Unit, onOpenSaves: () -> Unit) {
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Spacer(Modifier.height(12.dp))
-                    Button(onClick = { ctx.startActivity(GameActivity.intent(ctx, id)) }) {
+                    Button(shape = uiPill(), onClick = { ctx.startActivity(GameActivity.intent(ctx, id)) }) {
                         Icon(Icons.Default.PlayArrow, null)
                         Spacer(Modifier.width(6.dp))
                         Text(if (game.lastPlayed > 0) "Continue" else "Play")
@@ -171,29 +172,29 @@ fun GameInfoScreen(id: String, onBack: () -> Unit, onOpenSaves: () -> Unit) {
                 )
                 Info("Status", if (savExists) "${Format.size(sav.length())} · ${Format.dateTime(sav.lastModified())}" else "No save yet")
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(enabled = savExists, onClick = { exportSav.launch("${game.displayTitle}.sav") }) { Text("Export .sav") }
-                    OutlinedButton(onClick = { importSav.launch(arrayOf("*/*")) }) { Text("Import .sav") }
+                    OutlinedButton(shape = uiPill(), enabled = savExists, onClick = { exportSav.launch("${game.displayTitle}.sav") }) { Text("Export .sav") }
+                    OutlinedButton(shape = uiPill(), onClick = { importSav.launch(arrayOf("*/*")) }) { Text("Import .sav") }
                 }
             }
 
             Section("Save states") {
                 Info("Used slots", "$stateCount of 10")
-                OutlinedButton(onClick = onOpenSaves) { Text("Manage save states") }
+                OutlinedButton(shape = uiPill(), onClick = onOpenSaves) { Text("Manage save states") }
             }
 
             Section("Cover") {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(onClick = { pickCover.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }) {
+                    OutlinedButton(shape = uiPill(), onClick = { pickCover.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }) {
                         Text("Choose image")
                     }
-                    OutlinedButton(onClick = {
+                    OutlinedButton(shape = uiPill(), onClick = {
                         scope.launch {
                             val ok = BoxArt.fetch(game.fileName, storage.coverFile(id))
                             if (ok) CoverRefresh.version++
                             say(if (ok) "Box art downloaded" else "No box art found for this file name")
                         }
                     }) { Text("Download box art") }
-                    if (storage.coverFile(id).exists()) TextButton(onClick = { storage.coverFile(id).delete(); CoverRefresh.version++ }) { Text("Remove") }
+                    if (storage.coverFile(id).exists()) TextButton(shape = uiPill(), onClick = { storage.coverFile(id).delete(); CoverRefresh.version++ }) { Text("Remove") }
                 }
             }
 
@@ -203,8 +204,8 @@ fun GameInfoScreen(id: String, onBack: () -> Unit, onOpenSaves: () -> Unit) {
                 Info("Location", if (game.imported) "Copied into app storage" else "Original location (${Uri.parse(game.uri).authority ?: "device"})")
                 Info("SHA-1", game.id, mono = true)
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(onClick = { relocate.launch(arrayOf("*/*")) }) { Text("Locate file…") }
-                    TextButton(onClick = { confirmRemove = true }) { Text("Remove from library", color = MaterialTheme.colorScheme.error) }
+                    OutlinedButton(shape = uiPill(), onClick = { relocate.launch(arrayOf("*/*")) }) { Text("Locate file…") }
+                    TextButton(shape = uiPill(), onClick = { confirmRemove = true }) { Text("Remove from library", color = MaterialTheme.colorScheme.error) }
                 }
             }
         }
@@ -225,12 +226,12 @@ fun GameInfoScreen(id: String, onBack: () -> Unit, onOpenSaves: () -> Unit) {
                 }
             },
             confirmButton = {
-                TextButton(onClick = {
+                TextButton(shape = uiPill(), onClick = {
                     confirmRemove = false
                     scope.launch { app.library.remove(id, deleteData) }
                 }) { Text("Remove") }
             },
-            dismissButton = { TextButton(onClick = { confirmRemove = false }) { Text("Cancel") } },
+            dismissButton = { TextButton(shape = uiPill(), onClick = { confirmRemove = false }) { Text("Cancel") } },
         )
     }
     confirmImportSav?.let { data ->
@@ -239,12 +240,12 @@ fun GameInfoScreen(id: String, onBack: () -> Unit, onOpenSaves: () -> Unit) {
             title = { Text("Replace in-game save?") },
             text = { Text("Your current in-game save will be replaced. A backup copy (.bak) is kept in app storage.") },
             confirmButton = {
-                TextButton(onClick = {
+                TextButton(shape = uiPill(), onClick = {
                     confirmImportSav = null
                     scope.launch { SaveTransfer.writeSav(sav, data); version++; say("In-game save imported") }
                 }) { Text("Replace") }
             },
-            dismissButton = { TextButton(onClick = { confirmImportSav = null }) { Text("Cancel") } },
+            dismissButton = { TextButton(shape = uiPill(), onClick = { confirmImportSav = null }) { Text("Cancel") } },
         )
     }
 }
